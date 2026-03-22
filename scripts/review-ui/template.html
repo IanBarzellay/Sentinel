@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel Review</title>
+
+  <!-- diff2html vendor CSS (inlined by render.js) -->
+  <link rel="stylesheet" id="diff2html-css-placeholder">
+  <style id="diff2html-vendor-css">/* INJECT_VENDOR_CSS */</style>
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       CSS CUSTOM PROPERTIES — DESIGN TOKENS
+    ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --bg:          #0d1117;
+      --bg-card:     #161b22;
+      --bg-hover:    #1c2128;
+      --bg-input:    #0d1117;
+      --border:      #30363d;
+      --border-muted:#21262d;
+      --text:        #e6edf3;
+      --text-muted:  #8b949e;
+      --text-subtle: #6e7681;
+      --accent:      #58a6ff;
+      --accent-hover:#79c0ff;
+      --shadow:      0 8px 24px rgba(0,0,0,0.4);
+      --shadow-sm:   0 2px 8px rgba(0,0,0,0.3);
+      --radius:      8px;
+      --radius-sm:   4px;
+      --transition:  200ms ease;
+
+      /* Risk colors */
+      --c-critical:  #dc2626;
+      --c-high:      #ea580c;
+      --c-med:       #ca8a04;
+      --c-low:       #16a34a;
+      --c-discuss:   #2563eb;
+      --c-unclear:   #6b7280;
+
+      /* Operation colors */
+      --c-edit:       #3b82f6;
+      --c-create:     #22c55e;
+      --c-delete:     #ef4444;
+      --c-rename:     #f97316;
+      --c-create-dir: #14b8a6;
+      --c-delete-dir: #ef4444;
+    }
+
+    [data-theme="light"] {
+      --bg:          #f6f8fa;
+      --bg-card:     #ffffff;
+      --bg-hover:    #f3f4f6;
+      --bg-input:    #ffffff;
+      --border:      #d0d7de;
+      --border-muted:#e4e7eb;
+      --text:        #1f2328;
+      --text-muted:  #636e7b;
+      --text-subtle: #8c959f;
+      --shadow:      0 8px 24px rgba(0,0,0,0.08);
+      --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; font-size: 14px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      line-height: 1.6;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+    code, .mono {
+      font-family: ui-monospace, "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+      font-size: 0.85em;
+      background: var(--border-muted);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════════════════════ */
+    #app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    .page-body {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 16px;
+      gap: 24px;
+    }
+
+    main {
+      min-width: 0;
+      padding: 24px 0 80px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       STICKY HEADER
+    ═══════════════════════════════════════════════════════════════ */
+    #sentinel-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-row1 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .header-row2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sentinel-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+
+    .sentinel-brand .shield {
+      font-size: 1.3rem;
+      filter: drop-shadow(0 0 6px rgba(88, 166, 255, 0.5));
+    }
+
+    .header-task {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-date {
+      font-size: 0.82rem;
+      color: var(--text-subtle);
+    }
+
+    .header-spacer { flex: 1; }
+
+    #search-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text);
+      padding: 5px 14px 5px 32px;
+      font-size: 0.85rem;
+      width: 220px;
+      outline: none;
+      transition: border-color var(--transition), width var(--transition);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.44 1.334a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 10px center;
+    }
+
+    #search-input:focus {
+      border-color: var(--accent);
+      width: 280px;
+    }
+
+    #search-input::placeholder { color: var(--text-subtle); }
+
+    .severity-filters {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .severity-chip {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      opacity: 0.5;
+      transition: opacity var(--transition), transform 80ms;
+      user-select: none;
+    }
+
+    .severity-chip.active { opacity: 1; }
+    .severity-chip:hover { transform: scale(1.05); }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .theme-toggle:hover { background: var(--bg-hover); color: var(--text); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SIDEBAR NAV
+    ═══════════════════════════════════════════════════════════════ */
+    #sidebar {
+      position: sticky;
+      top: 72px;
+      height: calc(100vh - 72px);
+      overflow-y: auto;
+      padding: 20px 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .nav-section {
+      margin-bottom: 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      text-decoration: none;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background: var(--bg-hover);
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-link .nav-icon { margin-right: 6px; font-size: 0.9rem; }
+
+    .nav-badge {
+      background: var(--border);
+      color: var(--text-muted);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    .nav-badge.critical { background: var(--c-critical); color: white; }
+    .nav-badge.high { background: var(--c-high); color: white; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SECTION HEADERS
+    ═══════════════════════════════════════════════════════════════ */
+    .section {
+      margin-bottom: 32px;
+      animation: fadeSlideIn 400ms ease both;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .section-count {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 10px;
+      padding: 1px 9px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .section-divider {
+      height: 1px;
+      background: var(--border-muted);
+      margin: 24px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RISK & BADGE SYSTEM
+    ═══════════════════════════════════════════════════════════════ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .badge-CRITICAL { background: var(--c-critical); color: white; animation: pulse 2s infinite; }
+    .badge-HIGH     { background: var(--c-high);     color: white; }
+    .badge-MED      { background: var(--c-med);      color: #1c1c1c; }
+    .badge-LOW      { background: var(--c-low);      color: white; }
+    .badge-DISCUSS  { background: var(--c-discuss);  color: white; }
+    .badge-UNCLEAR  { background: var(--c-unclear);  color: white; }
+
+    .badge-mode { background: var(--accent); color: #000; }
+    .badge-conf { background: var(--border); color: var(--text-muted); }
+
+    .badge-edit       { background: rgba(59,130,246,0.15);  color: #58a6ff; border: 1px solid rgba(59,130,246,0.3); }
+    .badge-create     { background: rgba(34,197,94,0.15);   color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-delete     { background: rgba(239,68,68,0.15);   color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .badge-rename     { background: rgba(249,115,22,0.15);  color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+    .badge-create_dir { background: rgba(20,184,166,0.15);  color: #2dd4bf; border: 1px solid rgba(20,184,166,0.3); }
+    .badge-delete_dir { background: rgba(239,68,68,0.15);   color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SUMMARY CARDS
+    ═══════════════════════════════════════════════════════════════ */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 150ms, box-shadow 150ms, border-color 150ms;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .summary-card.card-critical::before { background: var(--c-critical); }
+    .summary-card.card-high::before     { background: var(--c-high); }
+    .summary-card.card-med::before      { background: var(--c-med); }
+    .summary-card.card-low::before      { background: var(--c-low); }
+    .summary-card.card-files::before    { background: var(--accent); }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      border-color: var(--accent);
+    }
+
+    .summary-number {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .card-critical .summary-number { color: var(--c-critical); }
+    .card-high     .summary-number { color: var(--c-high); }
+    .card-med      .summary-number { color: var(--c-med); }
+    .card-low      .summary-number { color: var(--c-low); }
+    .card-files    .summary-number { color: var(--accent); }
+
+    .summary-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       INTENT VS REALITY
+    ═══════════════════════════════════════════════════════════════ */
+    .ivr-goal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .ivr-goal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+
+    .ivr-goal-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-subtle);
+      margin-bottom: 6px;
+    }
+
+    .ivr-goal-text {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .ivr-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .ivr-col {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .ivr-col-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+
+    .ivr-col.col-completed { border-top: 3px solid var(--c-low); }
+    .ivr-col.col-extra     { border-top: 3px solid var(--c-med); }
+    .ivr-col.col-missing   { border-top: 3px solid var(--c-critical); }
+
+    .ivr-col.col-completed .ivr-col-header { color: #4ade80; }
+    .ivr-col.col-extra     .ivr-col-header { color: #fbbf24; }
+    .ivr-col.col-missing   .ivr-col-header { color: #f87171; }
+
+    .ivr-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ivr-pill {
+      font-size: 0.82rem;
+      color: var(--text);
+      padding: 6px 10px;
+      background: var(--bg-hover);
+      border-radius: var(--radius-sm);
+      line-height: 1.4;
+    }
+
+    .ivr-empty {
+      font-size: 0.82rem;
+      color: var(--text-subtle);
+      font-style: italic;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TIMELINE
+    ═══════════════════════════════════════════════════════════════ */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 9px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 14px;
+      animation: fadeSlideIn 300ms ease both;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -23px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+    }
+
+    .timeline-time {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      font-family: ui-monospace, monospace;
+      margin-bottom: 2px;
+    }
+
+    .timeline-event {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       CHANGE CARDS
+    ═══════════════════════════════════════════════════════════════ */
+    .change-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      overflow: hidden;
+      transition: box-shadow 150ms;
+      animation: fadeSlideIn 350ms ease both;
+    }
+
+    .change-card:hover { box-shadow: var(--shadow-sm); }
+
+    .change-card.op-edit       { border-left: 4px solid var(--c-edit); }
+    .change-card.op-create     { border-left: 4px solid var(--c-create); }
+    .change-card.op-delete     { border-left: 4px solid var(--c-delete); }
+    .change-card.op-rename     { border-left: 4px solid var(--c-rename); }
+    .change-card.op-create_dir { border-left: 4px solid var(--c-create-dir); }
+    .change-card.op-delete_dir { border-left: 4px solid var(--c-delete-dir); }
+
+    .change-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .change-header:hover { background: var(--bg-hover); }
+
+    .change-header-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .change-path {
+      flex: 1;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .change-path .path-dir {
+      color: var(--text-muted);
+    }
+
+    .change-expand-icon {
+      color: var(--text-subtle);
+      font-size: 0.8rem;
+      transition: transform var(--transition);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .change-card.expanded .change-expand-icon { transform: rotate(90deg); }
+
+    .change-why {
+      padding: 0 16px 12px;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .change-body {
+      display: none;
+      padding: 0 16px 16px;
+    }
+
+    .change-card.expanded .change-body { display: block; }
+
+    /* Before / After behavior */
+    .behavior-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .behavior-grid.one-col { grid-template-columns: 1fr; }
+
+    .behavior-box {
+      background: var(--bg);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .behavior-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .behavior-label.before { color: #f87171; }
+    .behavior-label.after  { color: #4ade80; }
+
+    .behavior-text {
+      font-size: 0.85rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Rename path display */
+    .rename-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      margin-bottom: 14px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.82rem;
+      flex-wrap: wrap;
+    }
+
+    .rename-old { color: #f87171; text-decoration: line-through; }
+    .rename-arrow { color: var(--text-subtle); font-size: 1.1rem; }
+    .rename-new { color: #4ade80; }
+
+    /* Dir file list */
+    .dir-file-list {
+      background: var(--bg);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+
+    .dir-file-list-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 6px;
+    }
+
+    .dir-file-item {
+      font-family: ui-monospace, monospace;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      padding: 2px 0;
+    }
+
+    /* Diff container */
+    .diff-container {
+      margin-bottom: 14px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    /* Collapsible sections */
+    details {
+      margin-bottom: 8px;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    details > summary {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition);
+    }
+
+    details > summary::before {
+      content: "▶";
+      font-size: 0.65rem;
+      color: var(--text-subtle);
+      transition: transform var(--transition);
+    }
+
+    details[open] > summary::before { transform: rotate(90deg); }
+    details > summary:hover { background: var(--bg-hover); color: var(--text); }
+
+    details > .details-content {
+      padding: 10px 12px;
+      background: var(--bg-card);
+    }
+
+    .detail-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .detail-list li {
+      font-size: 0.85rem;
+      color: var(--text);
+      padding-left: 16px;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .detail-list li::before {
+      content: "•";
+      position: absolute;
+      left: 4px;
+      color: var(--text-subtle);
+    }
+
+    .alternative-item {
+      padding: 8px 10px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+
+    .alternative-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .alternative-pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+
+    .pros-label { color: #4ade80; font-weight: 600; margin-bottom: 2px; }
+    .cons-label { color: #f87171; font-weight: 600; margin-bottom: 2px; }
+
+    .fix-flow-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fix-flow-item {
+      font-size: 0.85rem;
+    }
+
+    .fix-flow-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 4px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FINDINGS TABLE
+    ═══════════════════════════════════════════════════════════════ */
+    .findings-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .agent-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .agent-chip {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      transition: all var(--transition);
+      user-select: none;
+    }
+
+    .agent-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .agent-chip.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+    .copy-md-btn {
+      margin-left: auto;
+      padding: 5px 12px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .copy-md-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--accent); }
+    .copy-md-btn.copied { border-color: var(--c-low); color: #4ade80; }
+
+    .findings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .findings-table th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-subtle);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .findings-table th:hover { color: var(--text); }
+
+    .findings-table tbody tr {
+      border-bottom: 1px solid var(--border-muted);
+      transition: background var(--transition);
+    }
+
+    .findings-table tbody tr:hover { background: var(--bg-hover); }
+    .findings-table tbody tr.filtered-out { display: none; }
+
+    .findings-table td {
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .findings-table .col-severity { width: 100px; }
+    .findings-table .col-agent    { width: 130px; }
+    .findings-table .col-location { width: 180px; }
+    .findings-table .col-desc     { }
+    .findings-table .col-fix      { width: 220px; }
+
+    .findings-row-CRITICAL { border-left: 4px solid var(--c-critical); }
+    .findings-row-HIGH     { border-left: 4px solid var(--c-high); }
+    .findings-row-MED      { border-left: 4px solid var(--c-med); }
+    .findings-row-LOW      { border-left: 4px solid var(--c-low); }
+    .findings-row-DISCUSS  { border-left: 4px solid var(--c-discuss); }
+    .findings-row-UNCLEAR  { border-left: 4px solid var(--c-unclear); }
+
+    .finding-location {
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    .finding-also {
+      font-size: 0.72rem;
+      color: var(--text-subtle);
+      margin-top: 3px;
+    }
+
+    .findings-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .findings-empty .empty-icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+    /* Search highlight */
+    mark {
+      background: rgba(255, 200, 0, 0.3);
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SUGGESTED TESTS
+    ═══════════════════════════════════════════════════════════════ */
+    .test-file-group {
+      margin-bottom: 14px;
+    }
+
+    .test-file-header {
+      font-family: ui-monospace, monospace;
+      font-size: 0.82rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+      padding: 6px 10px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-muted);
+    }
+
+    .test-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .test-description {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      font-family: ui-monospace, monospace;
+      margin-bottom: 4px;
+    }
+
+    .test-description::before {
+      content: "it('";
+      color: var(--text-subtle);
+    }
+
+    .test-description::after {
+      content: "')";
+      color: var(--text-subtle);
+    }
+
+    .test-why {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       NEXT STEPS
+    ═══════════════════════════════════════════════════════════════ */
+    .next-steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .next-step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      animation: fadeSlideIn 300ms ease both;
+      transition: box-shadow 150ms;
+    }
+
+    .next-step-item:hover { box-shadow: var(--shadow-sm); }
+
+    .next-step-num {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      min-width: 20px;
+      padding-top: 2px;
+    }
+
+    .next-step-body { flex: 1; }
+
+    .next-step-action {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+
+    .next-step-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .next-step-location {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+
+    .next-step-agent {
+      font-size: 0.72rem;
+      color: var(--text-subtle);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BACK TO TOP BUTTON
+    ═══════════════════════════════════════════════════════════════ */
+    #back-to-top {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      transition: transform 150ms, background 150ms;
+      z-index: 200;
+    }
+
+    #back-to-top:hover { transform: scale(1.1); background: var(--accent-hover); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════════════════════════ */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+    }
+
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.8); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Stagger cards */
+    .change-card:nth-child(1)  { animation-delay: 0ms; }
+    .change-card:nth-child(2)  { animation-delay: 40ms; }
+    .change-card:nth-child(3)  { animation-delay: 80ms; }
+    .change-card:nth-child(4)  { animation-delay: 120ms; }
+    .change-card:nth-child(5)  { animation-delay: 160ms; }
+    .change-card:nth-child(n+6) { animation-delay: 200ms; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PRINT STYLES
+    ═══════════════════════════════════════════════════════════════ */
+    @media print {
+      #sidebar, #sentinel-header .header-row2, #back-to-top { display: none !important; }
+      .page-body { grid-template-columns: 1fr; }
+      .change-card.expanded .change-body { display: block !important; }
+      details { page-break-inside: avoid; }
+      details[open] > .details-content { display: block !important; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       DIFF2HTML DARK MODE OVERRIDES
+    ═══════════════════════════════════════════════════════════════ */
+    [data-theme="dark"] .d2h-wrapper {
+      background: var(--bg-card);
+    }
+    [data-theme="dark"] .d2h-file-header {
+      background: var(--bg);
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+    [data-theme="dark"] .d2h-code-line, [data-theme="dark"] .d2h-code-side-line {
+      color: var(--text);
+    }
+    [data-theme="dark"] .d2h-diff-table {
+      background: var(--bg-card);
+    }
+    [data-theme="dark"] .d2h-code-linenumber {
+      background: var(--bg);
+      border-color: var(--border-muted);
+      color: var(--text-subtle);
+    }
+    [data-theme="dark"] .d2h-del {
+      background: rgba(239,68,68,0.12);
+    }
+    [data-theme="dark"] .d2h-ins {
+      background: rgba(34,197,94,0.12);
+    }
+    [data-theme="dark"] .d2h-del-oneside, [data-theme="dark"] .d2h-del.d2h-change {
+      background: rgba(239,68,68,0.12);
+    }
+    [data-theme="dark"] .d2h-ins-oneside, [data-theme="dark"] .d2h-ins.d2h-change {
+      background: rgba(34,197,94,0.12);
+    }
+    [data-theme="dark"] .d2h-cntx { background: var(--bg-card); }
+    [data-theme="dark"] .d2h-info {
+      background: var(--bg);
+      color: var(--text-subtle);
+      border-color: var(--border-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       EXPANDABLE FINDING ROWS + IDE SUGGESTION BOX
+    ═══════════════════════════════════════════════════════════════ */
+    .finding-main-row { cursor: pointer; }
+    .finding-main-row.expanded-row { background: var(--bg-hover) !important; }
+    .finding-detail-row { display: none; }
+    .finding-detail-row.expanded { display: table-row; }
+
+    .finding-detail-cell {
+      padding: 0;
+      background: var(--bg);
+      border-bottom: 2px solid var(--border);
+    }
+
+    .finding-detail-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px 16px 16px 20px;
+    }
+
+    @media (max-width: 900px) {
+      .finding-detail-inner { grid-template-columns: 1fr; }
+    }
+
+    .detail-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-subtle);
+      margin-bottom: 8px;
+    }
+
+    .detail-description-text {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.75;
+    }
+
+    .detail-description-text code {
+      background: rgba(110,118,129,0.15);
+      border: 1px solid rgba(110,118,129,0.25);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.82em;
+      color: #e6edf3;
+    }
+
+    [data-theme="light"] .detail-description-text code { color: #1f2328; }
+
+    .ide-box {
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+    }
+
+    .ide-box-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      background: #1c2128;
+      border-bottom: 1px solid var(--border-muted);
+      font-size: 0.72rem;
+      color: var(--text-subtle);
+    }
+
+    .ide-box-file { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+    .ide-copy-btn {
+      background: none;
+      border: 1px solid var(--border-muted);
+      border-radius: 3px;
+      color: var(--text-subtle);
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      cursor: pointer;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+
+    .ide-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .ide-copy-btn.copied { border-color: var(--c-low); color: #4ade80; }
+
+    .ide-box-body { background: #0d1117; padding: 8px 0; }
+
+    .ide-line {
+      display: flex;
+      align-items: flex-start;
+      line-height: 1.7;
+      min-height: 1.7em;
+    }
+
+    .ide-line:hover { background: rgba(255,255,255,0.04); }
+
+    .ide-line-num {
+      min-width: 3.2em;
+      text-align: right;
+      padding-right: 14px;
+      color: #3d444d;
+      font-size: 0.75rem;
+      user-select: none;
+      flex-shrink: 0;
+      line-height: 1.7;
+    }
+
+    .ide-line-content {
+      padding: 0 14px 0 0;
+      color: #e6edf3;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      flex: 1;
+      line-height: 1.7;
+    }
+
+    /* Syntax token colours inside IDE lines */
+    .tok-kw  { color: #ff7b72; }
+    .tok-str { color: #a5d6ff; }
+    .tok-fn  { color: #d2a8ff; }
+    .tok-num { color: #79c0ff; }
+    .tok-cmt { color: #8b949e; font-style: italic; }
+
+    [data-theme="light"] .ide-box-header { background: #f1f3f5; }
+    [data-theme="light"] .ide-box-body   { background: #f8f9fa; }
+    [data-theme="light"] .ide-line-content { color: #1f2328; }
+    [data-theme="light"] .ide-line-num   { color: #9aa0a6; }
+    [data-theme="light"] .ide-line:hover { background: rgba(0,0,0,0.03); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       EMPTY STATE
+    ═══════════════════════════════════════════════════════════════ */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state .empty-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+    .empty-state .empty-body { font-size: 0.875rem; color: var(--text-subtle); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .page-body { grid-template-columns: 1fr; }
+      #sidebar { display: none; }
+      .ivr-columns { grid-template-columns: 1fr; }
+      .ivr-goal-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(3, 1fr); }
+      .behavior-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .header-row1 { gap: 8px; }
+      .sentinel-brand { font-size: 1rem; }
+      #search-input { width: 160px; }
+      #search-input:focus { width: 200px; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <header id="sentinel-header"></header>
+  <div class="page-body">
+    <aside id="sidebar"></aside>
+    <main id="content"></main>
+  </div>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<!-- diff2html vendor JS (inlined by render.js) -->
+<script id="diff2html-js-placeholder"></script>
+<script>/* INJECT_VENDOR_JS */</script>
+
+<!-- Review data injected by render.js -->
+<script>/* INJECT_DATA */</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     RENDERING ENGINE
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  "use strict";
+
+  // ── Constants ──────────────────────────────────────────────────────────────
+
+  const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MED", "LOW", "DISCUSS", "UNCLEAR"];
+
+  const AGENT_COLORS = {
+    "master-reviewer":       "#a78bfa",
+    "security-auditor":      "#f87171",
+    "regression-hunter":     "#fb923c",
+    "performance-scout":     "#fbbf24",
+    "code-usage-inspector":  "#34d399",
+    "test-critic":           "#60a5fa",
+    "code-quality-inspector":"#e879f9",
+  };
+
+  // ── State ──────────────────────────────────────────────────────────────────
+
+  let activeAgentFilter = null;
+  let searchQuery = "";
+  let activeSeverities = new Set(SEVERITY_ORDER);
+
+  // ── Entry point ────────────────────────────────────────────────────────────
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const review = window.__REVIEW_DATA__;
+    if (!review) {
+      document.getElementById("content").innerHTML =
+        '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">No review data found</div></div>';
+      return;
+    }
+
+    // Apply saved theme
+    const savedTheme = localStorage.getItem("sentinel-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    renderHeader(review);
+    renderSidebar(review);
+    renderContent(review);
+    initBackToTop();
+    initKeyboardShortcuts();
+
+    // Stagger section animations
+    document.querySelectorAll(".section").forEach((el, i) => {
+      el.style.animationDelay = (i * 60) + "ms";
+    });
+  });
+
+  // ── HEADER ─────────────────────────────────────────────────────────────────
+
+  function renderHeader(review) {
+    const meta = review.meta || {};
+    const mode = meta.mode || "review";
+    const risk = meta.overall_risk || "LOW";
+    const task = meta.task || "Code Review";
+    const date = meta.date || "";
+    const filesChanged = meta.files_changed || meta.files_scanned || 0;
+
+    const criticalCount = (review.findings || []).filter(f => f.level === "CRITICAL").length;
+
+    const header = document.getElementById("sentinel-header");
+    header.innerHTML = `
+      <div class="header-row1">
+        <div class="sentinel-brand">
+          <span class="shield">🛡️</span>
+          <span>SENTINEL</span>
+        </div>
+        <span class="header-task" title="${esc(task)}">${esc(task)}</span>
+        <span class="header-date">${esc(date)}</span>
+        <span class="badge badge-mode">${mode.toUpperCase()}</span>
+        <span class="badge badge-${risk}" title="Overall risk">${risk}</span>
+        ${criticalCount > 0 ? `<span class="badge badge-CRITICAL">🚨 ${criticalCount} CRITICAL</span>` : ""}
+        <div class="header-spacer"></div>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light mode">
+          ${document.documentElement.getAttribute("data-theme") === "dark" ? "☀️ Light" : "🌙 Dark"}
+        </button>
+      </div>
+      <div class="header-row2">
+        <input type="text" id="search-input" placeholder="Search findings, changes… (/)" autocomplete="off">
+        <div class="severity-filters" id="severity-filters">
+          ${SEVERITY_ORDER.map(s => `
+            <span class="severity-chip active badge badge-${s}" data-severity="${s}">${s}</span>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+    // Theme toggle
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const curr = document.documentElement.getAttribute("data-theme");
+      const next = curr === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("sentinel-theme", next);
+      document.getElementById("theme-toggle").textContent = next === "dark" ? "☀️ Light" : "🌙 Dark";
+    });
+
+    // Search
+    const searchInput = document.getElementById("search-input");
+    let searchTimer;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = searchInput.value.toLowerCase().trim();
+        applyFilters();
+      }, 120);
+    });
+
+    // Severity chips
+    document.getElementById("severity-filters").addEventListener("click", e => {
+      const chip = e.target.closest(".severity-chip");
+      if (!chip) return;
+      const sev = chip.dataset.severity;
+      if (activeSeverities.has(sev)) {
+        activeSeverities.delete(sev);
+        chip.classList.remove("active");
+        chip.style.opacity = "0.35";
+      } else {
+        activeSeverities.add(sev);
+        chip.classList.add("active");
+        chip.style.opacity = "1";
+      }
+      applyFilters();
+    });
+  }
+
+  // ── SIDEBAR ────────────────────────────────────────────────────────────────
+
+  function renderSidebar(review) {
+    const mode = (review.meta || {}).mode || "review";
+    const findings = review.findings || [];
+    const critCount = findings.filter(f => f.level === "CRITICAL").length;
+    const highCount = findings.filter(f => f.level === "HIGH").length;
+    const changesCount = (review.changes || []).length;
+    const testsCount = (review.suggested_tests || []).length;
+    const stepsCount = (review.next_steps || []).length;
+
+    const links = [];
+
+    links.push({ href: "#section-summary", icon: "📊", label: "Summary", badge: null });
+
+    if (mode === "review") {
+      links.push({ href: "#section-ivr", icon: "🎯", label: "Intent vs Reality", badge: null });
+      links.push({ href: "#section-timeline", icon: "⏱️", label: "Timeline", badge: null });
+      links.push({ href: "#section-changes", icon: "📝", label: "Changes", badge: changesCount || null });
+    }
+
+    const findingsBadgeClass = critCount > 0 ? "critical" : highCount > 0 ? "high" : null;
+    links.push({ href: "#section-findings", icon: "🔍", label: "Findings", badge: findings.length || null, badgeClass: findingsBadgeClass });
+
+    if (testsCount > 0) {
+      links.push({ href: "#section-tests", icon: "🧪", label: "Suggested Tests", badge: testsCount });
+    }
+
+    if (stepsCount > 0) {
+      links.push({ href: "#section-nextsteps", icon: "⚡", label: "Next Steps", badge: stepsCount });
+    }
+
+    const sidebar = document.getElementById("sidebar");
+    sidebar.innerHTML = links.map(l => `
+      <div class="nav-section">
+        <a href="${l.href}" class="nav-link">
+          <span><span class="nav-icon">${l.icon}</span>${l.label}</span>
+          ${l.badge ? `<span class="nav-badge ${l.badgeClass || ""}">${l.badge}</span>` : ""}
+        </a>
+      </div>
+    `).join("");
+
+    // Highlight active section on scroll
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          document.querySelectorAll(".nav-link").forEach(a => a.classList.remove("active"));
+          const id = "#" + entry.target.id;
+          const link = document.querySelector(`.nav-link[href="${id}"]`);
+          if (link) link.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+
+    setTimeout(() => {
+      document.querySelectorAll(".section[id]").forEach(el => observer.observe(el));
+    }, 100);
+  }
+
+  // ── CONTENT ────────────────────────────────────────────────────────────────
+
+  function renderContent(review) {
+    const mode = (review.meta || {}).mode || "review";
+    const content = document.getElementById("content");
+
+    const parts = [];
+
+    parts.push(renderSummary(review));
+
+    if (mode === "review") {
+      if (review.intent_vs_reality) {
+        parts.push(renderIntentVsReality(review.intent_vs_reality));
+      }
+      if (review.session_timeline && review.session_timeline.length) {
+        parts.push(renderTimeline(review.session_timeline));
+      }
+      if (review.changes && review.changes.length) {
+        parts.push(renderChangeCards(review.changes));
+      }
+    }
+
+    parts.push(renderFindings(review.findings || []));
+
+    if (review.suggested_tests && review.suggested_tests.length) {
+      parts.push(renderSuggestedTests(review.suggested_tests));
+    }
+
+    if (review.next_steps && review.next_steps.length) {
+      parts.push(renderNextSteps(review.next_steps));
+    }
+
+    content.innerHTML = parts.join("");
+
+    // Post-render: draw diffs, count-up animations
+    initDiffs();
+    initCountUp();
+
+    // Expand/collapse change cards
+    document.querySelectorAll(".change-header").forEach(header => {
+      header.addEventListener("click", () => {
+        const card = header.closest(".change-card");
+        card.classList.toggle("expanded");
+        // Draw diff if just expanded
+        if (card.classList.contains("expanded")) {
+          const diffEl = card.querySelector(".diff-pending");
+          if (diffEl) drawDiff(diffEl);
+        }
+      });
+    });
+  }
+
+  // ── SUMMARY ────────────────────────────────────────────────────────────────
+
+  function renderSummary(review) {
+    const findings = review.findings || [];
+    const counts = { CRITICAL: 0, HIGH: 0, MED: 0, LOW: 0 };
+    findings.forEach(f => { if (counts[f.level] !== undefined) counts[f.level]++; });
+    const filesCount = review.meta.files_changed || review.meta.files_scanned || 0;
+
+    const cards = [
+      { cls: "card-critical", n: counts.CRITICAL, label: "Critical" },
+      { cls: "card-high",     n: counts.HIGH,     label: "High" },
+      { cls: "card-med",      n: counts.MED,      label: "Medium" },
+      { cls: "card-low",      n: counts.LOW,       label: "Low" },
+      { cls: "card-files",    n: filesCount,       label: review.meta.mode === "scan" ? "Scanned" : "Changed" },
+    ].map(c => `
+      <div class="summary-card ${c.cls}">
+        <div class="summary-number" data-target="${c.n}">0</div>
+        <div class="summary-label">${c.label}</div>
+      </div>
+    `).join("");
+
+    return `
+      <section class="section" id="section-summary">
+        <div class="summary-grid">${cards}</div>
+      </section>
+      <div class="section-divider"></div>
+    `;
+  }
+
+  function initCountUp() {
+    document.querySelectorAll(".summary-number[data-target]").forEach(el => {
+      const target = parseInt(el.dataset.target, 10);
+      if (target === 0) { el.textContent = "0"; return; }
+
+      const duration = 700;
+      const start = performance.now();
+      el.style.animation = "countUp 400ms ease both";
+
+      function step(now) {
+        const p = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3); // ease-out cubic
+        el.textContent = Math.round(ease * target);
+        if (p < 1) requestAnimationFrame(step);
+        else el.textContent = target;
+      }
+
+      requestAnimationFrame(step);
+    });
+  }
+
+  // ── INTENT VS REALITY ──────────────────────────────────────────────────────
+
+  function renderIntentVsReality(ivr) {
+    if (!ivr) return "";
+
+    const goalGrid = `
+      <div class="ivr-goal-grid">
+        ${ivr.original_goal ? `
+          <div class="ivr-goal">
+            <div class="ivr-goal-label">Original goal</div>
+            <div class="ivr-goal-text">${esc(ivr.original_goal)}</div>
+          </div>
+        ` : ""}
+        ${ivr.final_intent ? `
+          <div class="ivr-goal">
+            <div class="ivr-goal-label">Final intent</div>
+            <div class="ivr-goal-text">${esc(ivr.final_intent)}</div>
+          </div>
+        ` : ""}
+      </div>
+    `;
+
+    const cols = [
+      {
+        cls: "col-completed",
+        emoji: "✅",
+        label: "Completed",
+        items: ivr.completed || [],
+        emptyMsg: "All goals met"
+      },
+      {
+        cls: "col-extra",
+        emoji: "⚠️",
+        label: "Extra",
+        items: ivr.extra || [],
+        emptyMsg: "No unrequested changes"
+      },
+      {
+        cls: "col-missing",
+        emoji: "❌",
+        label: "Missing",
+        items: ivr.missing || [],
+        emptyMsg: "Nothing missing"
+      },
+    ].map(col => `
+      <div class="ivr-col ${col.cls}">
+        <div class="ivr-col-header">${col.emoji} ${col.label}</div>
+        <div class="ivr-pills">
+          ${col.items.length
+            ? col.items.map(item => `<div class="ivr-pill">${esc(item)}</div>`).join("")
+            : `<div class="ivr-empty">${col.emptyMsg}</div>`
+          }
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <section class="section" id="section-ivr">
+        <div class="section-header">
+          <span class="section-title">🎯 Intent vs Reality</span>
+        </div>
+        ${goalGrid}
+        <div class="ivr-columns">${cols}</div>
+      </section>
+      <div class="section-divider"></div>
+    `;
+  }
+
+  // ── TIMELINE ───────────────────────────────────────────────────────────────
+
+  function renderTimeline(timeline) {
+    if (!timeline || !timeline.length) return "";
+
+    const items = timeline.map((item, i) => `
+      <div class="timeline-item" style="animation-delay:${i * 50}ms">
+        <div class="timeline-dot"></div>
+        <div class="timeline-time">${esc(item.time || "")}</div>
+        <div class="timeline-event">${esc(item.event || "")}</div>
+      </div>
+    `).join("");
+
+    return `
+      <section class="section" id="section-timeline">
+        <div class="section-header">
+          <span class="section-title">⏱️ Session Timeline</span>
+          <span class="section-count">${timeline.length} events</span>
+        </div>
+        <div class="timeline">${items}</div>
+      </section>
+      <div class="section-divider"></div>
+    `;
+  }
+
+  // ── CHANGE CARDS ───────────────────────────────────────────────────────────
+
+  function renderChangeCards(changes) {
+    if (!changes || !changes.length) return "";
+
+    const cards = changes.map(c => renderChangeCard(c)).join("");
+
+    return `
+      <section class="section" id="section-changes">
+        <div class="section-header">
+          <span class="section-title">📝 Changes</span>
+          <span class="section-count">${changes.length} file${changes.length !== 1 ? "s" : ""}</span>
+          <button onclick="expandAllChanges()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:0.78rem;">Expand all</button>
+        </div>
+        ${cards}
+      </section>
+      <div class="section-divider"></div>
+    `;
+  }
+
+  window.expandAllChanges = function() {
+    document.querySelectorAll(".change-card").forEach(card => {
+      card.classList.add("expanded");
+      const diffEl = card.querySelector(".diff-pending");
+      if (diffEl) drawDiff(diffEl);
+    });
+  };
+
+  function renderChangeCard(c) {
+    const op = c.operation || "edit";
+    const risk = c.risk || "LOW";
+    const conf = c.confidence || "";
+    const path = c.path || c.new_path || "";
+    const [dir, file] = splitPath(path);
+
+    const headerBadges = `
+      <div class="change-header-badges">
+        <span class="badge badge-${op}">${opLabel(op)}</span>
+        <span class="badge badge-${risk}">${risk}</span>
+        ${conf ? `<span class="badge badge-conf">${conf}</span>` : ""}
+      </div>
+    `;
+
+    const pathDisplay = op === "rename"
+      ? `<span class="change-path"><span class="path-dir">${esc(splitPath(c.old_path || "")[0])}</span>${esc(splitPath(c.old_path || "")[1])}</span>`
+      : `<span class="change-path"><span class="path-dir">${esc(dir)}</span>${esc(file)}</span>`;
+
+    const header = `
+      <div class="change-header">
+        ${headerBadges}
+        ${pathDisplay}
+        <span class="change-expand-icon">▶</span>
+      </div>
+    `;
+
+    const why = c.why ? `<div class="change-why">${esc(c.why)}</div>` : "";
+
+    let body = "";
+
+    // Rename display
+    if (op === "rename") {
+      body += `
+        <div class="rename-display">
+          <span class="rename-old">${esc(c.old_path || "")}</span>
+          <span class="rename-arrow">→</span>
+          <span class="rename-new">${esc(c.new_path || "")}</span>
+        </div>
+      `;
+    }
+
+    // Dir file list
+    if (op === "create_dir" && c.files_added && c.files_added.length) {
+      body += `
+        <div class="dir-file-list">
+          <div class="dir-file-list-label">Files created inside</div>
+          ${c.files_added.map(f => `<div class="dir-file-item">+ ${esc(f)}</div>`).join("")}
+        </div>
+      `;
+    }
+
+    if (op === "delete_dir" && c.files_deleted && c.files_deleted.length) {
+      body += `
+        <div class="dir-file-list">
+          <div class="dir-file-list-label">Files deleted</div>
+          ${c.files_deleted.map(f => `<div class="dir-file-item">- ${esc(f)}</div>`).join("")}
+        </div>
+      `;
+    }
+
+    // Behavior before/after
+    const hasBefore = c.behavior_before !== null && c.behavior_before !== undefined;
+    const hasAfter  = c.behavior_after  !== null && c.behavior_after  !== undefined;
+
+    if (hasBefore || hasAfter) {
+      const oneCol = !hasBefore || !hasAfter;
+      body += `<div class="behavior-grid${oneCol ? " one-col" : ""}">`;
+      if (hasBefore) {
+        body += `
+          <div class="behavior-box">
+            <div class="behavior-label before">Before</div>
+            <div class="behavior-text">${esc(c.behavior_before)}</div>
+          </div>
+        `;
+      }
+      if (hasAfter) {
+        body += `
+          <div class="behavior-box">
+            <div class="behavior-label after">After</div>
+            <div class="behavior-text">${esc(c.behavior_after)}</div>
+          </div>
+        `;
+      }
+      body += `</div>`;
+    }
+
+    // Diff
+    if (c.diff) {
+      body += `<div class="diff-container"><div class="diff-pending" data-diff="${escAttr(c.diff)}" data-op="${op}"></div></div>`;
+    } else if (c.note) {
+      body += `<div style="font-size:0.8rem;color:var(--text-subtle);padding:6px 0;margin-bottom:10px;">${esc(c.note)}</div>`;
+    }
+
+    // Collapsibles
+    if (c.potential_issues && c.potential_issues.length) {
+      body += collapsible("⚠️ Potential Issues", `<ul class="detail-list">${c.potential_issues.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`);
+    }
+    if (c.ripple_effects && c.ripple_effects.length) {
+      body += collapsible("🌊 Ripple Effects", `<ul class="detail-list">${c.ripple_effects.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`);
+    }
+    if (c.alternatives && c.alternatives.length) {
+      const altHtml = c.alternatives.map(a => `
+        <div class="alternative-item">
+          <div class="alternative-name">${esc(a.name || "Alternative")}</div>
+          <div class="alternative-pros-cons">
+            <div>
+              <div class="pros-label">Pros</div>
+              ${(a.pros || []).map(p => `<div style="font-size:0.8rem;color:var(--text);margin-bottom:2px;">✓ ${esc(p)}</div>`).join("")}
+            </div>
+            <div>
+              <div class="cons-label">Cons</div>
+              ${(a.cons || []).map(p => `<div style="font-size:0.8rem;color:var(--text);margin-bottom:2px;">✗ ${esc(p)}</div>`).join("")}
+            </div>
+          </div>
+        </div>
+      `).join("");
+      body += collapsible("💡 Alternatives", altHtml);
+    }
+    if (c.fix_flow && c.fix_flow.is_fix) {
+      const ff = c.fix_flow;
+      body += collapsible("🐛 Fix Flow", `
+        <div class="fix-flow-grid">
+          ${ff.bug_description ? `<div class="fix-flow-item"><div class="fix-flow-label">Bug</div>${esc(ff.bug_description)}</div>` : ""}
+          ${ff.reproduce_steps && ff.reproduce_steps.length ? `<div class="fix-flow-item"><div class="fix-flow-label">Reproduce</div><ul class="detail-list">${ff.reproduce_steps.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
+          ${ff.verify_steps && ff.verify_steps.length ? `<div class="fix-flow-item"><div class="fix-flow-label">Verify</div><ul class="detail-list">${ff.verify_steps.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
+          ${ff.edge_cases_to_test && ff.edge_cases_to_test.length ? `<div class="fix-flow-item"><div class="fix-flow-label">Edge cases</div><ul class="detail-list">${ff.edge_cases_to_test.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
+        </div>
+      `);
+    }
+
+    return `
+      <div class="change-card op-${op}" data-search="${escAttr((c.path || "") + " " + (c.old_path || "") + " " + (c.new_path || "") + " " + (c.why || ""))}">
+        ${header}
+        ${why}
+        <div class="change-body">${body}</div>
+      </div>
+    `;
+  }
+
+  function collapsible(title, content) {
+    return `
+      <details>
+        <summary>${title}</summary>
+        <div class="details-content">${content}</div>
+      </details>
+    `;
+  }
+
+  // ── DIFFS ──────────────────────────────────────────────────────────────────
+
+  function initDiffs() {
+    // Diffs are drawn lazily (when card is expanded) to avoid rendering hundreds of diffs at once
+    // First card auto-expands and draws
+  }
+
+  function drawDiff(el) {
+    if (!el || el.classList.contains("diff-drawn")) return;
+    if (typeof Diff2HtmlUI === "undefined") {
+      el.innerHTML = `<div style="padding:8px;font-size:0.8rem;color:var(--text-subtle);">diff2html not loaded — open with internet connection</div>`;
+      return;
+    }
+
+    const diffStr = el.dataset.diff;
+    if (!diffStr) return;
+
+    try {
+      const theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      const ui = new Diff2HtmlUI(el, diffStr, {
+        outputFormat: "side-by-side",
+        colorScheme: theme,
+        drawFileList: false,
+        matching: "lines",
+      });
+      ui.draw();
+      el.classList.remove("diff-pending");
+      el.classList.add("diff-drawn");
+    } catch (e) {
+      el.innerHTML = `<pre style="font-size:0.75rem;color:var(--text-muted);overflow-x:auto;padding:8px;background:var(--bg)">${esc(diffStr)}</pre>`;
+    }
+  }
+
+  // ── FINDINGS ───────────────────────────────────────────────────────────────
+
+  function renderFindings(findings) {
+    if (!findings.length) {
+      return `
+        <section class="section" id="section-findings">
+          <div class="section-header">
+            <span class="section-title">🔍 Findings</span>
+            <span class="section-count">0</span>
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">🎉</div>
+            <div class="empty-title">No findings</div>
+            <div class="empty-body">All checks passed — looking good!</div>
+          </div>
+        </section>
+        <div class="section-divider"></div>
+      `;
+    }
+
+    // Get unique agents
+    const agents = [...new Set(findings.map(f => f.found_by).filter(Boolean))].sort();
+
+    const agentChips = agents.map(a => `
+      <span class="agent-chip" data-agent="${escAttr(a)}" style="--agent-color:${AGENT_COLORS[a] || "#8b949e"}" title="${esc(a)}">
+        ${agentLabel(a)}
+      </span>
+    `).join("");
+
+    const rows = findings.map((f, i) => {
+      const alsoBy = f.also_found_by && f.also_found_by.length
+        ? `<div class="finding-also">Also: ${f.also_found_by.map(a => agentLabel(a)).join(", ")}</div>`
+        : "";
+
+      // Build IDE suggestion lines
+      const suggLines = splitToLines(f.suggestion || "");
+      const ideLines = suggLines.map((line, li) => `
+        <div class="ide-line">
+          <span class="ide-line-num">${li + 1}</span>
+          <span class="ide-line-content">${highlightLine(esc(line))}</span>
+        </div>`).join("");
+
+      const locFull = esc((f.location || "") + (f.line ? ":" + f.line : ""));
+
+      const mainRow = `
+        <tr class="findings-row-${f.level} finding-main-row"
+            data-level="${f.level}"
+            data-agent="${escAttr(f.found_by || "")}"
+            data-idx="${i}"
+            data-search="${escAttr((f.description || "") + " " + (f.location || "") + " " + (f.suggestion || ""))}">
+          <td class="col-severity"><span class="badge badge-${f.level}">${f.level}</span></td>
+          <td class="col-agent" style="color:${AGENT_COLORS[f.found_by] || "var(--text-muted)"}; font-size:0.78rem;">${esc(agentLabel(f.found_by || ""))}</td>
+          <td class="col-location">
+            <span class="finding-location">${esc(f.location || "")}${f.line ? ":" + f.line : ""}</span>
+            ${alsoBy}
+          </td>
+          <td class="col-desc">${esc(f.description || "")}</td>
+          <td class="col-fix"><span style="font-size:0.82rem;color:var(--text-muted);">${esc(f.suggestion || "")}</span></td>
+        </tr>`;
+
+      const detailRow = `
+        <tr class="finding-detail-row" id="finding-detail-${i}">
+          <td colspan="5" class="finding-detail-cell">
+            <div class="finding-detail-inner">
+              <div>
+                <div class="detail-label">📋 Description</div>
+                <div class="detail-description-text">${formatText(f.description || "")}</div>
+              </div>
+              <div>
+                <div class="detail-label">💡 Suggested Fix</div>
+                <div class="ide-box">
+                  <div class="ide-box-header">
+                    <span>🔧</span>
+                    <span class="ide-box-file">${locFull}</span>
+                    <button class="ide-copy-btn" data-copy="${escAttr(f.suggestion || "")}">Copy</button>
+                  </div>
+                  <div class="ide-box-body">${ideLines}</div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+
+      return mainRow + detailRow;
+    }).join("");
+
+    return `
+      <section class="section" id="section-findings">
+        <div class="section-header">
+          <span class="section-title">🔍 Findings</span>
+          <span class="section-count">${findings.length}</span>
+        </div>
+        <div class="findings-controls">
+          <div class="agent-chips" id="agent-chips">${agentChips}</div>
+          <button class="copy-md-btn" id="copy-md-btn">📋 Copy as Markdown</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="findings-table" id="findings-table">
+            <thead>
+              <tr>
+                <th class="col-severity">Severity ↕</th>
+                <th class="col-agent">Agent</th>
+                <th class="col-location">Location</th>
+                <th class="col-desc">Description</th>
+                <th class="col-fix">Suggestion</th>
+              </tr>
+            </thead>
+            <tbody id="findings-tbody">${rows}</tbody>
+          </table>
+        </div>
+      </section>
+      <div class="section-divider"></div>
+    `;
+  }
+
+  function initFindingsControls(findings) {
+    const chips = document.getElementById("agent-chips");
+    if (chips) {
+      chips.addEventListener("click", e => {
+        const chip = e.target.closest(".agent-chip");
+        if (!chip) return;
+        const agent = chip.dataset.agent;
+        if (activeAgentFilter === agent) {
+          activeAgentFilter = null;
+          chips.querySelectorAll(".agent-chip").forEach(c => c.classList.remove("active"));
+        } else {
+          activeAgentFilter = agent;
+          chips.querySelectorAll(".agent-chip").forEach(c => {
+            c.classList.toggle("active", c.dataset.agent === agent);
+          });
+        }
+        applyFilters();
+      });
+    }
+
+    const copyBtn = document.getElementById("copy-md-btn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => copyFindingsAsMarkdown(findings));
+    }
+  }
+
+  function copyFindingsAsMarkdown(findings) {
+    const header = "| Severity | Location | Description | Suggestion | Agent |";
+    const divider = "|----------|----------|-------------|------------|-------|";
+    const rows = findings.map(f =>
+      `| ${f.level} | ${f.location || ""}${f.line ? ":" + f.line : ""} | ${(f.description || "").replace(/\|/g, "\\|")} | ${(f.suggestion || "").replace(/\|/g, "\\|")} | ${f.found_by || ""} |`
+    );
+    const md = [header, divider, ...rows].join("\n");
+
+    navigator.clipboard.writeText(md).then(() => {
+      const btn = document.getElementById("copy-md-btn");
+      if (btn) {
+        btn.textContent = "✓ Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = "📋 Copy as Markdown";
+          btn.classList.remove("copied");
+        }, 2000);
+      }
+    }).catch(() => {
+      alert("Could not copy to clipboard — try manually selecting the table.");
+    });
+  }
+
+  // ── SUGGESTED TESTS ────────────────────────────────────────────────────────
+
+  function renderSuggestedTests(tests) {
+    if (!tests || !tests.length) return "";
+
+    // Group by file
+    const byFile = {};
+    tests.forEach(t => {
+      const f = t.file || "Unknown file";
+      if (!byFile[f]) byFile[f] = [];
+      byFile[f].push(t);
+    });
+
+    const groups = Object.entries(byFile).map(([file, items]) => `
+      <div class="test-file-group">
+        <div class="test-file-header">📄 ${esc(file)}</div>
+        ${items.map(t => `
+          <div class="test-item">
+            <div class="test-description">${esc(t.description || "")}</div>
+            ${t.why_valuable ? `<div class="test-why">${esc(t.why_valuable)}</div>` : ""}
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+
+    return `
+      <section class="section" id="section-tests">
+        <div class="section-header">
+          <span class="section-title">🧪 Suggested Tests</span>
+          <span class="section-count">${tests.length}</span>
+        </div>
+        ${groups}
+      </section>
+      <div class="section-divider"></div>
+    `;
+  }
+
+  // ── NEXT STEPS ─────────────────────────────────────────────────────────────
+
+  function renderNextSteps(steps) {
+    if (!steps || !steps.length) return "";
+
+    const items = steps.map((s, i) => `
+      <div class="next-step-item" style="animation-delay:${i * 40}ms">
+        <div class="next-step-num">${i + 1}.</div>
+        <div class="next-step-body">
+          <div class="next-step-action">${esc(s.action || "")}</div>
+          <div class="next-step-meta">
+            <span class="badge badge-${s.priority || "LOW"}">${s.priority || "LOW"}</span>
+            ${s.location ? `<span class="next-step-location">${esc(s.location)}</span>` : ""}
+            ${s.found_by ? `<span class="next-step-agent">↳ ${esc(agentLabel(s.found_by))}</span>` : ""}
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <section class="section" id="section-nextsteps">
+        <div class="section-header">
+          <span class="section-title">⚡ Next Steps</span>
+          <span class="section-count">${steps.length}</span>
+        </div>
+        <div class="next-steps-list">${items}</div>
+      </section>
+    `;
+  }
+
+  // ── FILTERS ────────────────────────────────────────────────────────────────
+
+  function applyFilters() {
+    // Filter findings rows
+    const rows = document.querySelectorAll("#findings-tbody tr");
+    rows.forEach(row => {
+      const level = row.dataset.level || "";
+      const agent = row.dataset.agent || "";
+      const text = (row.dataset.search || "").toLowerCase();
+
+      const matchesSeverity = activeSeverities.has(level);
+      const matchesAgent = !activeAgentFilter || agent === activeAgentFilter;
+      const matchesSearch = !searchQuery || text.includes(searchQuery);
+
+      row.classList.toggle("filtered-out", !(matchesSeverity && matchesAgent && matchesSearch));
+    });
+
+    // Filter change cards
+    document.querySelectorAll(".change-card").forEach(card => {
+      const text = (card.dataset.search || "").toLowerCase();
+      const matches = !searchQuery || text.includes(searchQuery);
+      card.style.display = matches ? "" : "none";
+    });
+
+    // Filter next steps
+    document.querySelectorAll(".next-step-item").forEach(item => {
+      const text = (item.querySelector(".next-step-action") || {}).textContent || "";
+      const matches = !searchQuery || text.toLowerCase().includes(searchQuery);
+      item.style.display = matches ? "" : "none";
+    });
+
+    // Highlight search term
+    if (searchQuery) {
+      highlightSearch(searchQuery);
+    } else {
+      clearHighlights();
+    }
+  }
+
+  function highlightSearch(query) {
+    clearHighlights();
+    if (!query) return;
+    const re = new RegExp(`(${escapeRegex(query)})`, "gi");
+
+    const targets = [
+      ...document.querySelectorAll("#findings-tbody td"),
+      ...document.querySelectorAll(".next-step-action"),
+    ];
+
+    targets.forEach(el => {
+      if (!el.querySelector("mark") && el.textContent.toLowerCase().includes(query)) {
+        el.innerHTML = el.innerHTML.replace(re, "<mark>$1</mark>");
+      }
+    });
+  }
+
+  function clearHighlights() {
+    document.querySelectorAll("mark").forEach(m => {
+      const parent = m.parentNode;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    });
+  }
+
+  // ── KEYBOARD SHORTCUTS ─────────────────────────────────────────────────────
+
+  function initKeyboardShortcuts() {
+    let selectedRow = -1;
+    const rows = () => [...document.querySelectorAll("#findings-tbody tr:not(.filtered-out)")];
+
+    document.addEventListener("keydown", e => {
+      const tag = document.activeElement.tagName;
+      const inInput = tag === "INPUT" || tag === "TEXTAREA";
+
+      if (e.key === "/" && !inInput) {
+        e.preventDefault();
+        const s = document.getElementById("search-input");
+        if (s) s.focus();
+        return;
+      }
+
+      if (e.key === "Escape") {
+        const s = document.getElementById("search-input");
+        if (s) { s.value = ""; searchQuery = ""; applyFilters(); s.blur(); }
+        return;
+      }
+
+      if (e.key === "j" && !inInput) {
+        e.preventDefault();
+        const r = rows();
+        selectedRow = Math.min(selectedRow + 1, r.length - 1);
+        r.forEach(row => row.classList.remove("selected-row"));
+        if (r[selectedRow]) {
+          r[selectedRow].classList.add("selected-row");
+          r[selectedRow].scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+
+      if (e.key === "k" && !inInput) {
+        e.preventDefault();
+        const r = rows();
+        selectedRow = Math.max(selectedRow - 1, 0);
+        r.forEach(row => row.classList.remove("selected-row"));
+        if (r[selectedRow]) {
+          r[selectedRow].classList.add("selected-row");
+          r[selectedRow].scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+    });
+  }
+
+  // ── BACK TO TOP ────────────────────────────────────────────────────────────
+
+  function initBackToTop() {
+    const btn = document.getElementById("back-to-top");
+    window.addEventListener("scroll", () => {
+      btn.style.display = window.scrollY > 400 ? "flex" : "none";
+    });
+    btn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  // ── UTILS ──────────────────────────────────────────────────────────────────
+
+  function esc(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function escAttr(str) {
+    if (!str) return "";
+    return String(str).replace(/"/g, "&quot;").replace(/\n/g, "\\n");
+  }
+
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function splitPath(p) {
+    if (!p) return ["", ""];
+    const parts = p.replace(/\\/g, "/").split("/");
+    const file = parts.pop() || "";
+    const dir = parts.length ? parts.join("/") + "/" : "";
+    return [dir, file];
+  }
+
+  function opLabel(op) {
+    const labels = {
+      edit: "EDIT", create: "CREATE", delete: "DELETE",
+      rename: "RENAME", create_dir: "MKDIR", delete_dir: "RMDIR"
+    };
+    return labels[op] || op.toUpperCase();
+  }
+
+  function agentLabel(name) {
+    const labels = {
+      "master-reviewer": "Master Reviewer",
+      "security-auditor": "Security",
+      "regression-hunter": "Regression",
+      "performance-scout": "Performance",
+      "code-usage-inspector": "Usage",
+      "test-critic": "Test Critic",
+      "code-quality-inspector": "Quality",
+    };
+    return labels[name] || name;
+  }
+
+  // ── POST-RENDER INIT ───────────────────────────────────────────────────────
+
+  // These need to run after HTML is in the DOM
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      const review = window.__REVIEW_DATA__;
+      if (!review) return;
+      initFindingsControls(review.findings || []);
+    }, 50);
+  });
+
+  // Keyboard row highlight style
+  const style = document.createElement("style");
+  style.textContent = `.selected-row { background: rgba(88,166,255,0.1) !important; outline: 1px solid var(--accent); }`;
+  document.head.appendChild(style);
+
+})();
+</script>
+
+</body>
+</html>
