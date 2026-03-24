@@ -212,14 +212,6 @@ Write ONLY to `.claude/reviews/tmp/test-critic.json`.
       "description": "should return 401 when token is expired",
       "why_valuable": "Token expiry is a security boundary. An expired token must be rejected. Without this test, expiry logic could be accidentally removed and auth would accept old tokens indefinitely."
     }
-  ],
-  "next_steps": [
-    {
-      "priority": "HIGH",
-      "action": "Add test for token expiry behavior in tests/auth.test.js",
-      "found_by": "test-critic",
-      "location": "tests/auth.test.js"
-    }
   ]
 }
 ```
@@ -234,3 +226,39 @@ Write ONLY to `.claude/reviews/tmp/test-critic.json`.
 If you find no test issues → `findings: []`. Populate `suggested_tests` regardless
 of whether you found issues — there are almost always valuable tests that don't exist yet.
 Maximum 5 suggested tests. Only suggest tests with genuine diagnostic value.
+
+---
+
+### Code Snippet Fields (optional but strongly preferred)
+
+When your finding points to a specific line or block of code that should change, include `current_code` and `suggested_code` in the finding object:
+
+```json
+{
+  "level": "HIGH",
+  "found_by": "...",
+  "location": "src/file.js",
+  "line": 34,
+  "description": "...",
+  "suggestion": "...",
+  "current_code": {
+    "start_line": 32,
+    "content": "// context line\nbad code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  },
+  "suggested_code": {
+    "content": "// context line\nfixed code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  }
+}
+```
+
+**Rules:**
+- Use the `Read` tool with `offset` and `limit` to fetch the target lines from the file
+- Include 2–3 context lines before and after the changed line(s)
+- `highlight_start` / `highlight_end` are **1-indexed within `content`** (not absolute file line numbers)
+- `suggested_code.highlight_start` marks the fixed lines in the suggested version
+- If the finding is conceptual (missing abstraction, pattern mismatch, architectural concern) with no specific fixable line — **omit both fields entirely**
+- Never fabricate code — only include lines you actually read from the file with the `Read` tool

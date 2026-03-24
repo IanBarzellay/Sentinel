@@ -311,12 +311,10 @@ Read all available tmp files. Then:
 2. Sort by severity: CRITICAL → HIGH → MED → LOW → DISCUSS → UNCLEAR
 3. Deduplicate: if two findings share the same `location` AND the same issue type,
    keep the higher severity one, add `"also_found_by": ["other-agent-name"]`
+   — when merging, preserve `current_code`/`suggested_code` from whichever finding has them
+   (prefer the higher-severity agent's version if both have them)
 4. Every finding must have `found_by` set to the exact agent name string
-
-**Merge next_steps:**
-1. Collect all `next_steps[]` entries from all files → one flat array
-2. Remove exact duplicates (same action text)
-3. Sort by priority: CRITICAL → HIGH → MED → LOW
+5. `current_code` and `suggested_code` are optional — preserve them if present, leave absent if not
 
 **Collect suggested_tests:**
 1. Collect all `suggested_tests[]` from test-critic only → one flat array
@@ -347,7 +345,7 @@ Create a URL-safe slug from the task description:
 (Use today's actual date in YYYY-MM-DD format.)
 
 The JSON must have EXACTLY these top-level keys in this order:
-`meta`, `intent_vs_reality`, `session_timeline`, `changes`, `findings`, `suggested_tests`, `next_steps`
+`meta`, `intent_vs_reality`, `session_timeline`, `changes`, `findings`, `suggested_tests`
 
 **All keys must be present.** Fields that are N/A for the current mode use `null` or `[]`, never omission.
 
@@ -381,7 +379,9 @@ The JSON must have EXACTLY these top-level keys in this order:
       "location": "src/routes/api.js",
       "line": 34,
       "description": "Clear description of the issue",
-      "suggestion": "Specific actionable fix"
+      "suggestion": "Specific actionable fix",
+      "current_code": null,
+      "suggested_code": null
     }
   ],
   "suggested_tests": [
@@ -391,14 +391,6 @@ The JSON must have EXACTLY these top-level keys in this order:
       "why_valuable": "Token expiry is a security boundary"
     }
   ],
-  "next_steps": [
-    {
-      "priority": "CRITICAL|HIGH|MED|LOW",
-      "action": "Specific action to take",
-      "found_by": "agent-name",
-      "location": "file:line if applicable"
-    }
-  ]
 }
 ```
 

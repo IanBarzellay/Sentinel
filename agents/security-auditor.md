@@ -182,14 +182,6 @@ Write ONLY to `.claude/reviews/tmp/security-auditor.json`.
       "description": "SQL injection via unsanitized userId parameter. Attack path: POST /api/users → userId passed to db.query template literal → attacker sends '; DROP TABLE users; -- to execute arbitrary SQL.",
       "suggestion": "Replace template literal with parameterized query: db.query('SELECT * FROM users WHERE id = ?', [userId])"
     }
-  ],
-  "next_steps": [
-    {
-      "priority": "CRITICAL|HIGH|MED|LOW",
-      "action": "Specific action to take",
-      "found_by": "security-auditor",
-      "location": "src/routes/api.js:34"
-    }
   ]
 }
 ```
@@ -202,5 +194,41 @@ Write ONLY to `.claude/reviews/tmp/security-auditor.json`.
 - DISCUSS: intentional behavior that should be explicitly confirmed
 - UNCLEAR: suspicious code but cannot trace full attack chain without more context
 
-If you find no vulnerabilities → `findings: []` and `next_steps: []`.
+If you find no vulnerabilities → `findings: []`.
 Do not fabricate issues to appear thorough. An empty findings list is a valid, honest result.
+
+---
+
+### Code Snippet Fields (optional but strongly preferred)
+
+When your finding points to a specific line or block of code that should change, include `current_code` and `suggested_code` in the finding object:
+
+```json
+{
+  "level": "HIGH",
+  "found_by": "...",
+  "location": "src/file.js",
+  "line": 34,
+  "description": "...",
+  "suggestion": "...",
+  "current_code": {
+    "start_line": 32,
+    "content": "// context line\nbad code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  },
+  "suggested_code": {
+    "content": "// context line\nfixed code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  }
+}
+```
+
+**Rules:**
+- Use the `Read` tool with `offset` and `limit` to fetch the target lines from the file
+- Include 2–3 context lines before and after the changed line(s)
+- `highlight_start` / `highlight_end` are **1-indexed within `content`** (not absolute file line numbers)
+- `suggested_code.highlight_start` marks the fixed lines in the suggested version
+- If the finding is conceptual (missing abstraction, pattern mismatch, architectural concern) with no specific fixable line — **omit both fields entirely**
+- Never fabricate code — only include lines you actually read from the file with the `Read` tool

@@ -1,0 +1,6 @@
+scripts/review-ui/vendor/
+scripts/review-ui/test-review.html
+scripts/review-ui/test-review.json
+__pycache__/
+*.pyc
+.claude/

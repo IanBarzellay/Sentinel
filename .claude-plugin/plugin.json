@@ -1,0 +1,14 @@
+{
+  "name": "sentinel",
+  "version": "1.0.0",
+  "description": "Automated code review and repo scanning with 7 specialist subagents. Tracks file changes during every task, launches parallel subagents after completion, scores risk, detects regressions, and opens a self-contained browser UI.",
+  "author": {
+    "name": "Ian Barzellay"
+  },
+  "settings": {
+    "models": {
+      "deep_reasoning": "claude-opus-4-6",
+      "pattern_matching": "claude-sonnet-4-6"
+    }
+  }
+}

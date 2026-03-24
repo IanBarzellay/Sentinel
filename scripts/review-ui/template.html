@@ -982,63 +982,6 @@
       line-height: 1.5;
     }
 
-    /* ═══════════════════════════════════════════════════════════════
-       NEXT STEPS
-    ═══════════════════════════════════════════════════════════════ */
-    .next-steps-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .next-step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 14px;
-      animation: fadeSlideIn 300ms ease both;
-      transition: box-shadow 150ms;
-    }
-
-    .next-step-item:hover { box-shadow: var(--shadow-sm); }
-
-    .next-step-num {
-      font-size: 0.75rem;
-      color: var(--text-subtle);
-      min-width: 20px;
-      padding-top: 2px;
-    }
-
-    .next-step-body { flex: 1; }
-
-    .next-step-action {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text);
-      line-height: 1.5;
-      margin-bottom: 4px;
-    }
-
-    .next-step-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .next-step-location {
-      font-family: ui-monospace, monospace;
-      font-size: 0.75rem;
-      color: var(--accent);
-    }
-
-    .next-step-agent {
-      font-size: 0.72rem;
-      color: var(--text-subtle);
-    }
 
     /* ═══════════════════════════════════════════════════════════════
        BACK TO TOP BUTTON
@@ -1157,15 +1100,22 @@
       border-bottom: 2px solid var(--border);
     }
 
-    .finding-detail-inner {
+    .finding-detail-inner { /* layout defined by .single or .stacked modifier */ }
+    .finding-detail-inner.single {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
       padding: 16px 16px 16px 20px;
     }
+    .finding-detail-inner.stacked {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px 20px;
+    }
 
     @media (max-width: 900px) {
-      .finding-detail-inner { grid-template-columns: 1fr; }
+      .finding-detail-inner.single { grid-template-columns: 1fr; }
     }
 
     .detail-label {
@@ -1274,6 +1224,38 @@
     [data-theme="light"] .ide-line-content { color: #1f2328; }
     [data-theme="light"] .ide-line-num   { color: #9aa0a6; }
     [data-theme="light"] .ide-line:hover { background: rgba(0,0,0,0.03); }
+
+    /* Two-box stacked layout */
+    .ide-stack { display: flex; flex-direction: column; gap: 0; }
+    .ide-stack-arrow {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+      padding: 6px 0;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .detail-desc-block { margin-bottom: 2px; }
+
+    /* IntelliJ-style line highlights */
+    .ide-line-hl { position: relative; }
+    .ide-line-hl-current  { background: rgba(255, 190, 0, 0.12); border-left: 3px solid #f0b429; }
+    .ide-line-hl-suggested { background: rgba(34, 197, 94, 0.10); border-left: 3px solid #22c55e; }
+    .ide-line-hl-current .ide-line-content,
+    .ide-line-hl-suggested .ide-line-content { padding-left: 5px; }
+
+    /* IDE box header variant labels */
+    .ide-box-label-current  { font-size: 0.68rem; font-weight: 700; color: #f0b429; text-transform: uppercase; letter-spacing: 0.06em; }
+    .ide-box-label-suggested { font-size: 0.68rem; font-weight: 700; color: #22c55e; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* Syntax colours (IntelliJ Darcula palette) */
+    .ide-kw  { color: #cc99cd; }   /* purple — keywords */
+    .ide-str { color: #7ec699; }   /* green — string literals */
+
+    [data-theme="light"] .ide-line-hl-current  { background: rgba(240, 140, 0, 0.09); }
+    [data-theme="light"] .ide-line-hl-suggested { background: rgba(34, 197, 94, 0.07); }
+    [data-theme="light"] .ide-kw  { color: #7b3f9e; }
+    [data-theme="light"] .ide-str { color: #2e7d32; }
 
     /* ═══════════════════════════════════════════════════════════════
        EMPTY STATE
@@ -1467,7 +1449,6 @@
     const highCount = findings.filter(f => f.level === "HIGH").length;
     const changesCount = (review.changes || []).length;
     const testsCount = (review.suggested_tests || []).length;
-    const stepsCount = (review.next_steps || []).length;
 
     const links = [];
 
@@ -1484,10 +1465,6 @@
 
     if (testsCount > 0) {
       links.push({ href: "#section-tests", icon: "🧪", label: "Suggested Tests", badge: testsCount });
-    }
-
-    if (stepsCount > 0) {
-      links.push({ href: "#section-nextsteps", icon: "⚡", label: "Next Steps", badge: stepsCount });
     }
 
     const sidebar = document.getElementById("sidebar");
@@ -1543,10 +1520,6 @@
 
     if (review.suggested_tests && review.suggested_tests.length) {
       parts.push(renderSuggestedTests(review.suggested_tests));
-    }
-
-    if (review.next_steps && review.next_steps.length) {
-      parts.push(renderNextSteps(review.next_steps));
     }
 
     content.innerHTML = parts.join("");
@@ -1924,6 +1897,21 @@
 
   // ── FINDINGS ───────────────────────────────────────────────────────────────
 
+  function splitToLines(str) { return (str || "").split("\n"); }
+
+  function formatText(str) {
+    return esc(str)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\n/g, "<br>");
+  }
+
+  function highlightLine(str) {
+    return str
+      .replace(/(&quot;[^&]*&quot;|&#39;[^&]*&#39;)/g, '<span class="ide-str">$1</span>')
+      .replace(/\b(const|let|var|function|return|if|else|await|async|import|from|export|default|class|new|this)\b/g,
+               '<span class="ide-kw">$1</span>');
+  }
+
   function renderFindings(findings) {
     if (!findings.length) {
       return `
@@ -1982,26 +1970,74 @@
           <td class="col-fix"><span style="font-size:0.82rem;color:var(--text-muted);">${esc(f.suggestion || "")}</span></td>
         </tr>`;
 
-      const detailRow = `
-        <tr class="finding-detail-row" id="finding-detail-${i}">
-          <td colspan="5" class="finding-detail-cell">
-            <div class="finding-detail-inner">
+      // ── Build detail content (stacked if current_code present, single otherwise) ──
+      let detailContent;
+      if (f.current_code) {
+        const cur = f.current_code;
+        const sug = f.suggested_code || { content: f.suggestion || "", highlight_start: null, highlight_end: null };
+        const mkLines = (lines, startLine, hlStart, hlEnd, variant) => lines.map((line, li) => {
+          const lineNum = startLine != null ? startLine + li : li + 1;
+          const isHl = hlStart != null && (li + 1) >= hlStart && (li + 1) <= (hlEnd || hlStart);
+          return `<div class="ide-line${isHl ? ` ide-line-hl ide-line-hl-${variant}` : ""}"><span class="ide-line-num">${lineNum}</span><span class="ide-line-content">${highlightLine(esc(line))}</span></div>`;
+        }).join("");
+        const curBody = mkLines(splitToLines(cur.content || ""), cur.start_line, cur.highlight_start, cur.highlight_end, "current");
+        const sugBody = mkLines(splitToLines(sug.content || ""), cur.start_line, sug.highlight_start, sug.highlight_end, "suggested");
+        detailContent = `
+          <div class="finding-detail-inner stacked">
+            <div class="detail-desc-block">
+              <div class="detail-label">📋 Description</div>
+              <div class="detail-description-text">${formatText(f.description || "")}</div>
+            </div>
+            <div class="ide-stack">
               <div>
-                <div class="detail-label">📋 Description</div>
-                <div class="detail-description-text">${formatText(f.description || "")}</div>
-              </div>
-              <div>
-                <div class="detail-label">💡 Suggested Fix</div>
-                <div class="ide-box">
+                <div class="detail-label">📍 Current Code</div>
+                <div class="ide-box ide-box-current">
                   <div class="ide-box-header">
-                    <span>🔧</span>
+                    <span class="ide-box-label-current">Current</span>
                     <span class="ide-box-file">${locFull}</span>
-                    <button class="ide-copy-btn" data-copy="${escAttr(f.suggestion || "")}">Copy</button>
                   </div>
-                  <div class="ide-box-body">${ideLines}</div>
+                  <div class="ide-box-body">${curBody}</div>
+                </div>
+              </div>
+              <div class="ide-stack-arrow">↓ Replace with</div>
+              <div>
+                <div class="detail-label">✨ Suggested Fix</div>
+                <div class="ide-box ide-box-suggested">
+                  <div class="ide-box-header">
+                    <span class="ide-box-label-suggested">Suggested</span>
+                    <span class="ide-box-file">${locFull}</span>
+                    <button class="ide-copy-btn" data-copy="${escAttr(sug.content || "")}">Copy</button>
+                  </div>
+                  <div class="ide-box-body">${sugBody}</div>
                 </div>
               </div>
             </div>
+          </div>`;
+      } else {
+        detailContent = `
+          <div class="finding-detail-inner single">
+            <div>
+              <div class="detail-label">📋 Description</div>
+              <div class="detail-description-text">${formatText(f.description || "")}</div>
+            </div>
+            <div>
+              <div class="detail-label">💡 Suggested Fix</div>
+              <div class="ide-box">
+                <div class="ide-box-header">
+                  <span>🔧</span>
+                  <span class="ide-box-file">${locFull}</span>
+                  <button class="ide-copy-btn" data-copy="${escAttr(f.suggestion || "")}">Copy</button>
+                </div>
+                <div class="ide-box-body">${ideLines}</div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      const detailRow = `
+        <tr class="finding-detail-row" id="finding-detail-${i}">
+          <td colspan="5" class="finding-detail-cell">
+            ${detailContent}
           </td>
         </tr>`;
 
@@ -2054,6 +2090,22 @@
           });
         }
         applyFilters();
+      });
+    }
+
+    // Expand/collapse finding detail rows on click
+    const tbody = document.getElementById("findings-tbody");
+    if (tbody) {
+      tbody.addEventListener("click", e => {
+        if (e.target.closest("button")) return; // don't expand when clicking Copy
+        const mainRow = e.target.closest(".finding-main-row");
+        if (!mainRow) return;
+        const idx = mainRow.dataset.idx;
+        const detailRow = document.getElementById(`finding-detail-${idx}`);
+        if (!detailRow) return;
+        const isOpen = mainRow.classList.contains("expanded-row");
+        mainRow.classList.toggle("expanded-row", !isOpen);
+        detailRow.classList.toggle("expanded", !isOpen);
       });
     }
 
@@ -2123,41 +2175,11 @@
     `;
   }
 
-  // ── NEXT STEPS ─────────────────────────────────────────────────────────────
-
-  function renderNextSteps(steps) {
-    if (!steps || !steps.length) return "";
-
-    const items = steps.map((s, i) => `
-      <div class="next-step-item" style="animation-delay:${i * 40}ms">
-        <div class="next-step-num">${i + 1}.</div>
-        <div class="next-step-body">
-          <div class="next-step-action">${esc(s.action || "")}</div>
-          <div class="next-step-meta">
-            <span class="badge badge-${s.priority || "LOW"}">${s.priority || "LOW"}</span>
-            ${s.location ? `<span class="next-step-location">${esc(s.location)}</span>` : ""}
-            ${s.found_by ? `<span class="next-step-agent">↳ ${esc(agentLabel(s.found_by))}</span>` : ""}
-          </div>
-        </div>
-      </div>
-    `).join("");
-
-    return `
-      <section class="section" id="section-nextsteps">
-        <div class="section-header">
-          <span class="section-title">⚡ Next Steps</span>
-          <span class="section-count">${steps.length}</span>
-        </div>
-        <div class="next-steps-list">${items}</div>
-      </section>
-    `;
-  }
-
   // ── FILTERS ────────────────────────────────────────────────────────────────
 
   function applyFilters() {
-    // Filter findings rows
-    const rows = document.querySelectorAll("#findings-tbody tr");
+    // Filter findings rows — target only main rows, never detail rows
+    const rows = document.querySelectorAll("#findings-tbody .finding-main-row");
     rows.forEach(row => {
       const level = row.dataset.level || "";
       const agent = row.dataset.agent || "";
@@ -2167,7 +2189,13 @@
       const matchesAgent = !activeAgentFilter || agent === activeAgentFilter;
       const matchesSearch = !searchQuery || text.includes(searchQuery);
 
-      row.classList.toggle("filtered-out", !(matchesSeverity && matchesAgent && matchesSearch));
+      const hide = !(matchesSeverity && matchesAgent && matchesSearch);
+      row.classList.toggle("filtered-out", hide);
+      if (hide) {
+        row.classList.remove("expanded-row");
+        const detail = document.getElementById(`finding-detail-${row.dataset.idx}`);
+        if (detail) detail.classList.remove("expanded");
+      }
     });
 
     // Filter change cards
@@ -2175,13 +2203,6 @@
       const text = (card.dataset.search || "").toLowerCase();
       const matches = !searchQuery || text.includes(searchQuery);
       card.style.display = matches ? "" : "none";
-    });
-
-    // Filter next steps
-    document.querySelectorAll(".next-step-item").forEach(item => {
-      const text = (item.querySelector(".next-step-action") || {}).textContent || "";
-      const matches = !searchQuery || text.toLowerCase().includes(searchQuery);
-      item.style.display = matches ? "" : "none";
     });
 
     // Highlight search term
@@ -2199,7 +2220,6 @@
 
     const targets = [
       ...document.querySelectorAll("#findings-tbody td"),
-      ...document.querySelectorAll(".next-step-action"),
     ];
 
     targets.forEach(el => {
@@ -2221,7 +2241,7 @@
 
   function initKeyboardShortcuts() {
     let selectedRow = -1;
-    const rows = () => [...document.querySelectorAll("#findings-tbody tr:not(.filtered-out)")];
+    const rows = () => [...document.querySelectorAll("#findings-tbody .finding-main-row:not(.filtered-out)")];
 
     document.addEventListener("keydown", e => {
       const tag = document.activeElement.tagName;
@@ -2260,6 +2280,12 @@
           r[selectedRow].classList.add("selected-row");
           r[selectedRow].scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
+      }
+
+      if (e.key === "Enter" && !inInput) {
+        e.preventDefault();
+        const r = rows();
+        if (r[selectedRow]) r[selectedRow].click();
       }
     });
   }

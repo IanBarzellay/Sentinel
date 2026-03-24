@@ -175,14 +175,6 @@ Write ONLY to `.claude/reviews/tmp/code-usage-inspector.json`.
       "description": "Missing required prop `onClose` on Modal component at line 47. Modal definition (src/components/Modal.jsx:12) requires `onClose: PropTypes.func.isRequired`. Without it, the close button will call undefined and throw.",
       "suggestion": "Add `onClose={handleClose}` to the Modal component at line 47."
     }
-  ],
-  "next_steps": [
-    {
-      "priority": "MED",
-      "action": "Remove duplicate formatDate implementation in src/utils/newHelper.js — use existing src/utils/dateHelper.js:formatDate instead",
-      "found_by": "code-usage-inspector",
-      "location": "src/utils/newHelper.js:12"
-    }
   ]
 }
 ```
@@ -195,3 +187,39 @@ Write ONLY to `.claude/reviews/tmp/code-usage-inspector.json`.
 - UNCLEAR: cannot determine from code alone whether usage is correct
 
 If you find no issues → `findings: []`. Do not fabricate findings.
+
+---
+
+### Code Snippet Fields (optional but strongly preferred)
+
+When your finding points to a specific line or block of code that should change, include `current_code` and `suggested_code` in the finding object:
+
+```json
+{
+  "level": "HIGH",
+  "found_by": "...",
+  "location": "src/file.js",
+  "line": 34,
+  "description": "...",
+  "suggestion": "...",
+  "current_code": {
+    "start_line": 32,
+    "content": "// context line\nbad code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  },
+  "suggested_code": {
+    "content": "// context line\nfixed code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  }
+}
+```
+
+**Rules:**
+- Use the `Read` tool with `offset` and `limit` to fetch the target lines from the file
+- Include 2–3 context lines before and after the changed line(s)
+- `highlight_start` / `highlight_end` are **1-indexed within `content`** (not absolute file line numbers)
+- `suggested_code.highlight_start` marks the fixed lines in the suggested version
+- If the finding is conceptual (missing abstraction, pattern mismatch, architectural concern) with no specific fixable line — **omit both fields entirely**
+- Never fabricate code — only include lines you actually read from the file with the `Read` tool

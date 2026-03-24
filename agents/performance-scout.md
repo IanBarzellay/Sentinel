@@ -260,17 +260,45 @@ Write ONLY to `.claude/reviews/tmp/performance-scout.json`.
       "description": "N+1 query: Order.findAll() is called inside a loop over users at line 24. With 1000 users, this executes 1001 database queries per request.",
       "suggestion": "Use User.findAll({ include: [{ model: Order }] }) to fetch users with their orders in a single JOIN query."
     }
-  ],
-  "next_steps": [
-    {
-      "priority": "HIGH",
-      "action": "Replace N+1 loop pattern with eager loading at src/routes/users.js:24",
-      "found_by": "performance-scout",
-      "location": "src/routes/users.js:24"
-    }
   ]
 }
 ```
 
 If you find no performance issues → `findings: []`. Do not invent findings.
 Every finding must cite specific code you actually read.
+
+---
+
+### Code Snippet Fields (optional but strongly preferred)
+
+When your finding points to a specific line or block of code that should change, include `current_code` and `suggested_code` in the finding object:
+
+```json
+{
+  "level": "HIGH",
+  "found_by": "...",
+  "location": "src/file.js",
+  "line": 34,
+  "description": "...",
+  "suggestion": "...",
+  "current_code": {
+    "start_line": 32,
+    "content": "// context line\nbad code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  },
+  "suggested_code": {
+    "content": "// context line\nfixed code here;\n// context line",
+    "highlight_start": 2,
+    "highlight_end": 2
+  }
+}
+```
+
+**Rules:**
+- Use the `Read` tool with `offset` and `limit` to fetch the target lines from the file
+- Include 2–3 context lines before and after the changed line(s)
+- `highlight_start` / `highlight_end` are **1-indexed within `content`** (not absolute file line numbers)
+- `suggested_code.highlight_start` marks the fixed lines in the suggested version
+- If the finding is conceptual (missing abstraction, pattern mismatch, architectural concern) with no specific fixable line — **omit both fields entirely**
+- Never fabricate code — only include lines you actually read from the file with the `Read` tool
