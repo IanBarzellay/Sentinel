@@ -302,7 +302,58 @@ with the agents that did complete. Do not fail the entire review for one missing
 
 ---
 
-## Step 6 — Merge all subagent findings
+## Step 6 — Validate outputs and retry if needed
+
+For each of the 7 agents, run the validator:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/master-reviewer.json"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/security-auditor.json"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/regression-hunter.json"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/performance-scout.json"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/code-usage-inspector.json"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/test-critic.json"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/validate_agent_output.py" ".claude/reviews/tmp/code-quality-inspector.json"
+```
+
+Parse each JSON report from stdout. Collect all agents where **either**:
+- `can_proceed: false` (file-level failure), **or**
+- `finding_issues` contains any entry with a non-empty `critical` array
+
+### Retry loop (max 2 rounds)
+
+If any agents need a retry, launch Tasks for all of them **in parallel**:
+
+```
+Your previous output at .claude/reviews/tmp/{AGENT_NAME}.json had these issues:
+
+File-level errors:
+{critical_errors from validation report — one per line}
+
+Per-finding issues:
+{for each entry in finding_issues where critical is non-empty:
+  Finding #{index + 1}: {critical list joined by ", "}
+}
+
+Re-read the relevant files and rewrite ONLY the problematic findings with
+corrected data. Overwrite the same file completely.
+Follow your original agent instructions exactly for output format.
+```
+
+Wait for all retry Tasks to complete.
+Re-run the validator on each retried agent's file.
+If any still fail, repeat **once more** (2 retries total per agent maximum).
+
+### After max retries
+
+For each agent, regardless of remaining issues:
+- `valid_findings > 0` → use only the valid findings in Step 7 (skip invalid ones by index)
+- `valid_findings == 0` and `total_findings > 0` → skip this agent's output entirely
+- `total_findings == 0` → agent found no issues — this is a valid result, proceed normally
+
+---
+
+## Step 7 — Merge all subagent findings
 
 Read all available tmp files. Then:
 
@@ -329,7 +380,7 @@ If master-reviewer file is missing, use these defaults:
 
 ---
 
-## Step 7 — Generate task slug
+## Step 8 — Generate task slug
 
 Create a URL-safe slug from the task description:
 - Lowercase only
@@ -339,7 +390,7 @@ Create a URL-safe slug from the task description:
 
 ---
 
-## Step 8 — Write the final review JSON
+## Step 9 — Write the final review JSON
 
 **Path:** `.claude/reviews/YYYY-MM-DD-{task-slug}.json`
 (Use today's actual date in YYYY-MM-DD format.)
@@ -402,7 +453,7 @@ If no findings at all → `"LOW"`.
 
 ---
 
-## Step 9 — Clean up
+## Step 10 — Clean up
 
 Delete the entire `.claude/reviews/tmp/` directory:
 ```bash
@@ -412,7 +463,7 @@ On Windows Git Bash this command works. Alternatively: `python -c "import shutil
 
 ---
 
-## Step 10 — Open the UI
+## Step 11 — Open the UI
 
 Determine the plugin root path. The plugin root is the directory containing `skills/`, `agents/`, `scripts/`, etc.
 Run:

@@ -67,7 +67,7 @@
     ═══════════════════════════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; font-size: 14px; }
+    html { scroll-behavior: smooth; font-size: 15px; }
 
     body {
       background: var(--bg);
@@ -100,10 +100,10 @@
     .page-body {
       display: grid;
       grid-template-columns: 220px 1fr;
-      max-width: 1400px;
+      max-width: 1800px;
       margin: 0 auto;
       width: 100%;
-      padding: 0 16px;
+      padding: 0 40px;
       gap: 24px;
     }
 
@@ -121,9 +121,15 @@
       z-index: 100;
       background: var(--bg);
       border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
+      padding: 12px 0;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-inner {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 0 40px;
     }
 
     .header-row1 {
@@ -640,7 +646,7 @@
     }
 
     .behavior-label {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -1119,7 +1125,7 @@
     }
 
     .detail-label {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -1180,7 +1186,7 @@
     .ide-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
     .ide-copy-btn.copied { border-color: var(--c-low); color: #4ade80; }
 
-    .ide-box-body { background: #0d1117; padding: 8px 0; }
+    .ide-box-body { background: #0d1117; padding: 8px 0; overflow-x: auto; }
 
     .ide-line {
       display: flex;
@@ -1206,9 +1212,8 @@
       padding: 0 14px 0 0;
       color: #e6edf3;
       font-size: 0.82rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      flex: 1;
+      white-space: pre;
+      tab-size: 4;
       line-height: 1.7;
     }
 
@@ -1229,7 +1234,7 @@
     .ide-stack { display: flex; flex-direction: column; gap: 0; }
     .ide-stack-arrow {
       text-align: center;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--text-subtle);
       padding: 6px 0;
       letter-spacing: 0.07em;
@@ -1245,8 +1250,8 @@
     .ide-line-hl-suggested .ide-line-content { padding-left: 5px; }
 
     /* IDE box header variant labels */
-    .ide-box-label-current  { font-size: 0.68rem; font-weight: 700; color: #f0b429; text-transform: uppercase; letter-spacing: 0.06em; }
-    .ide-box-label-suggested { font-size: 0.68rem; font-weight: 700; color: #22c55e; text-transform: uppercase; letter-spacing: 0.06em; }
+    .ide-box-label-current  { font-size: 0.72rem; font-weight: 700; color: #f0b429; text-transform: uppercase; letter-spacing: 0.06em; }
+    .ide-box-label-suggested { font-size: 0.72rem; font-weight: 700; color: #22c55e; text-transform: uppercase; letter-spacing: 0.06em; }
 
     /* Syntax colours (IntelliJ Darcula palette) */
     .ide-kw  { color: #cc99cd; }   /* purple — keywords */
@@ -1377,27 +1382,29 @@
 
     const header = document.getElementById("sentinel-header");
     header.innerHTML = `
-      <div class="header-row1">
-        <div class="sentinel-brand">
-          <span class="shield">🛡️</span>
-          <span>SENTINEL</span>
+      <div class="header-inner">
+        <div class="header-row1">
+          <div class="sentinel-brand">
+            <span class="shield">🛡️</span>
+            <span>SENTINEL</span>
+          </div>
+          <span class="header-task" title="${esc(task)}">${esc(task)}</span>
+          <span class="header-date">${esc(date)}</span>
+          <span class="badge badge-mode">${mode.toUpperCase()}</span>
+          <span class="badge badge-${risk}" title="Overall risk">${risk}</span>
+          ${criticalCount > 0 ? `<span class="badge badge-CRITICAL">🚨 ${criticalCount} CRITICAL</span>` : ""}
+          <div class="header-spacer"></div>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light mode">
+            ${document.documentElement.getAttribute("data-theme") === "dark" ? "☀️ Light" : "🌙 Dark"}
+          </button>
         </div>
-        <span class="header-task" title="${esc(task)}">${esc(task)}</span>
-        <span class="header-date">${esc(date)}</span>
-        <span class="badge badge-mode">${mode.toUpperCase()}</span>
-        <span class="badge badge-${risk}" title="Overall risk">${risk}</span>
-        ${criticalCount > 0 ? `<span class="badge badge-CRITICAL">🚨 ${criticalCount} CRITICAL</span>` : ""}
-        <div class="header-spacer"></div>
-        <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light mode">
-          ${document.documentElement.getAttribute("data-theme") === "dark" ? "☀️ Light" : "🌙 Dark"}
-        </button>
-      </div>
-      <div class="header-row2">
-        <input type="text" id="search-input" placeholder="Search findings, changes… (/)" autocomplete="off">
-        <div class="severity-filters" id="severity-filters">
-          ${SEVERITY_ORDER.map(s => `
-            <span class="severity-chip active badge badge-${s}" data-severity="${s}">${s}</span>
-          `).join("")}
+        <div class="header-row2">
+          <input type="text" id="search-input" placeholder="Search findings, changes… (/)" autocomplete="off">
+          <div class="severity-filters" id="severity-filters">
+            ${SEVERITY_ORDER.map(s => `
+              <span class="severity-chip active badge badge-${s}" data-severity="${s}">${s}</span>
+            `).join("")}
+          </div>
         </div>
       </div>
     `;
