@@ -1102,17 +1102,41 @@
 
     .finding-detail-cell {
       padding: 0;
-      background: var(--bg);
+      background: var(--bg-hover);
       border-bottom: 2px solid var(--border);
     }
 
-    .finding-detail-inner { /* layout defined by .single or .stacked modifier */ }
-    .finding-detail-inner.single {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      padding: 16px 16px 16px 20px;
+    /* Severity left border — continues the stripe from the main row above */
+    .finding-detail-cell[data-level="CRITICAL"] { border-left: 4px solid var(--c-critical); }
+    .finding-detail-cell[data-level="HIGH"]     { border-left: 4px solid var(--c-high); }
+    .finding-detail-cell[data-level="MED"]      { border-left: 4px solid var(--c-med); }
+    .finding-detail-cell[data-level="LOW"]      { border-left: 4px solid var(--c-low); }
+    .finding-detail-cell[data-level="DISCUSS"]  { border-left: 4px solid var(--c-discuss); }
+    .finding-detail-cell[data-level="UNCLEAR"]  { border-left: 4px solid var(--c-unclear); }
+
+    /* Alternating background so two open panels are visually distinct */
+    .finding-detail-cell[data-parity="odd"]  { background: var(--bg-card); }
+    .finding-detail-cell[data-parity="even"] { background: var(--bg-hover); }
+    [data-theme="light"] .finding-detail-cell[data-parity="odd"]  { background: #f0f2f5; }
+    [data-theme="light"] .finding-detail-cell[data-parity="even"] { background: #f6f8fa; }
+
+    /* Content section card — wraps each labeled block inside the panel */
+    .detail-section {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
     }
+    [data-theme="light"] .detail-section {
+      background: #ffffff;
+      border-color: var(--border);
+    }
+
+    /* Suggestion text uses slightly muted color to differ from description */
+    .detail-suggestion-text { color: var(--text-muted); }
+
+    .finding-detail-inner { /* always flex-column — both stacked and single */ }
+    .finding-detail-inner.single,
     .finding-detail-inner.stacked {
       display: flex;
       flex-direction: column;
@@ -1241,6 +1265,135 @@
       text-transform: uppercase;
     }
     .detail-desc-block { margin-bottom: 2px; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ISSUE FLOW — Playbook / Reproduction Steps
+    ═══════════════════════════════════════════════════════════════ */
+    .issue-flow {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .issue-flow-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, rgba(88,166,255,0.07) 0%, rgba(88,166,255,0.02) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .issue-flow-head-text { flex: 1; min-width: 0; }
+    .issue-flow-summary {
+      font-size: 0.875rem;
+      color: var(--text);
+      margin: 3px 0 0;
+      line-height: 1.45;
+    }
+    .issue-flow-badge {
+      flex-shrink: 0;
+      align-self: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(88,166,255,0.1);
+      border: 1px solid rgba(88,166,255,0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .issue-flow-steps { padding: 14px 14px 4px; }
+
+    /* Step row */
+    .flow-step { display: flex; gap: 12px; animation: flowStepIn 280ms ease both; }
+    .flow-step:nth-child(1) { animation-delay:  40ms; }
+    .flow-step:nth-child(2) { animation-delay: 110ms; }
+    .flow-step:nth-child(3) { animation-delay: 180ms; }
+    .flow-step:nth-child(4) { animation-delay: 250ms; }
+    .flow-step:nth-child(5) { animation-delay: 320ms; }
+    .flow-step:nth-child(6) { animation-delay: 390ms; }
+    @keyframes flowStepIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Left spine */
+    .flow-spine { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 26px; }
+    .flow-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--accent); color: #0d1117;
+      font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    /* Severity-tinted circles */
+    .issue-flow[data-level="CRITICAL"] .flow-num { background: var(--c-critical); color: #fff; }
+    .issue-flow[data-level="HIGH"]     .flow-num { background: var(--c-high);     color: #fff; }
+    .issue-flow[data-level="MED"]      .flow-num { background: var(--c-med);      color: #0d1117; }
+    .issue-flow[data-level="LOW"]      .flow-num { background: var(--c-low);      color: #fff; }
+    .issue-flow[data-level="DISCUSS"]  .flow-num { background: var(--c-discuss);  color: #fff; }
+
+    .flow-connector {
+      flex: 1; width: 2px; min-height: 14px; margin: 5px 0;
+      background: repeating-linear-gradient(
+        to bottom, var(--border-muted) 0, var(--border-muted) 4px,
+        transparent 4px, transparent 8px
+      );
+    }
+
+    /* Step body */
+    .flow-body { flex: 1; min-width: 0; padding-bottom: 16px; }
+    .flow-action { font-size: 0.875rem; color: var(--text); line-height: 1.5; padding-top: 3px; margin-bottom: 7px; }
+
+    /* Input block */
+    .flow-input-wrap { position: relative; margin-bottom: 7px; }
+    .flow-input {
+      display: block;
+      background: #0a0d12;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      padding: 7px 52px 7px 12px;
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+      font-size: 0.78rem; color: #79c0ff;
+      white-space: pre-wrap; word-break: break-all;
+      margin: 0; line-height: 1.6;
+    }
+    .flow-copy-btn {
+      position: absolute; top: 5px; right: 5px;
+      padding: 2px 8px; font-size: 0.68rem; font-weight: 600;
+      background: var(--bg-hover); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-muted);
+      cursor: pointer; transition: all var(--transition); white-space: nowrap;
+    }
+    .flow-copy-btn:hover { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+
+    /* Critical note */
+    .flow-critical {
+      display: flex; gap: 6px; align-items: flex-start;
+      background: rgba(240,180,41,0.07);
+      border-left: 3px solid #f0b429;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 5px 10px; font-size: 0.82rem; color: #f0b429; line-height: 1.45;
+    }
+    .flow-critical-icon { flex-shrink: 0; }
+
+    /* Footer: critical point */
+    .issue-flow-footer {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 9px 14px 10px;
+      background: rgba(220,38,38,0.05);
+      border-top: 1px solid var(--border);
+    }
+    .issue-flow-footer-icon { flex-shrink: 0; font-size: 0.82rem; line-height: 1.6; }
+    .issue-flow-critical-point {
+      font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+    }
+
+    /* Light mode */
+    [data-theme="light"] .flow-input { background: #f0f6ff; color: #0550ae; }
+    [data-theme="light"] .flow-critical { background: rgba(180,120,0,0.07); }
+    [data-theme="light"] .issue-flow-footer { background: rgba(180,0,0,0.04); }
+    [data-theme="light"] .issue-flow[data-level="CRITICAL"] .flow-num { color: #fff; }
+    [data-theme="light"] .issue-flow[data-level="HIGH"]     .flow-num { color: #fff; }
 
     /* IntelliJ-style line highlights */
     .ide-line-hl { position: relative; }
@@ -1906,6 +2059,58 @@
 
   function splitToLines(str) { return (str || "").split("\n"); }
 
+  function buildIssueFlow(f) {
+    const iflow = f.issue_flow;
+    if (!iflow || typeof iflow !== "object") return "";
+    const steps = Array.isArray(iflow.steps) ? iflow.steps : [];
+
+    const stepsHtml = steps.map((s, si) => {
+      const isLast = si === steps.length - 1;
+      const inputVal = s.input != null ? String(s.input) : null;
+      const inputHtml = inputVal !== null
+        ? `<div class="flow-input-wrap">
+             <pre class="flow-input">${esc(inputVal)}</pre>
+             <button class="flow-copy-btn" onclick="(function(b){const t=b.textContent;b.textContent='✓ Copied';setTimeout(()=>b.textContent=t,1600);navigator.clipboard&&navigator.clipboard.writeText(${JSON.stringify(inputVal)})})(this)">Copy</button>
+           </div>`
+        : "";
+      const critHtml = s.critical
+        ? `<div class="flow-critical"><span class="flow-critical-icon">⚠</span>${esc(String(s.critical))}</div>`
+        : "";
+      return `
+        <div class="flow-step">
+          <div class="flow-spine">
+            <div class="flow-num">${si + 1}</div>
+            ${!isLast ? '<div class="flow-connector"></div>' : ""}
+          </div>
+          <div class="flow-body">
+            <div class="flow-action">${esc(String(s.action || ""))}</div>
+            ${inputHtml}
+            ${critHtml}
+          </div>
+        </div>`;
+    }).join("");
+
+    const footerHtml = iflow.critical_point
+      ? `<div class="issue-flow-footer">
+           <span class="issue-flow-footer-icon">📍</span>
+           <span class="issue-flow-critical-point">${esc(String(iflow.critical_point))}</span>
+         </div>`
+      : "";
+
+    return `
+      <div class="detail-label" style="margin-top:14px">⚡ Reproduction Flow</div>
+      <div class="issue-flow" data-level="${esc(f.level || "")}">
+        <div class="issue-flow-header">
+          <div class="issue-flow-head-text">
+            <div class="issue-flow-summary">${esc(String(iflow.summary || ""))}</div>
+          </div>
+          <span class="issue-flow-badge">${steps.length} step${steps.length !== 1 ? "s" : ""}</span>
+        </div>
+        <div class="issue-flow-steps">${stepsHtml}</div>
+        ${footerHtml}
+      </div>`;
+  }
+
   function formatText(str) {
     return esc(str)
       .replace(/`([^`]+)`/g, "<code>$1</code>")
@@ -1977,6 +2182,16 @@
           <td class="col-fix"><span style="font-size:0.82rem;color:var(--text-muted);">${esc(f.suggestion || "")}</span></td>
         </tr>`;
 
+      // ── Suggestion text block (shared by both layouts) ──
+      const suggBlock = f.suggestion ? `
+        <div class="detail-section">
+          <div class="detail-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span>💡 Suggestion</span>
+            <button class="ide-copy-btn" data-copy="${escAttr(f.suggestion || "")}">Copy</button>
+          </div>
+          <div class="detail-description-text detail-suggestion-text">${formatText(f.suggestion || "")}</div>
+        </div>` : "";
+
       // ── Build detail content (stacked if current_code present, single otherwise) ──
       let detailContent;
       if (f.current_code) {
@@ -1991,10 +2206,12 @@
         const sugBody = mkLines(splitToLines(sug.content || ""), cur.start_line, sug.highlight_start, sug.highlight_end, "suggested");
         detailContent = `
           <div class="finding-detail-inner stacked">
-            <div class="detail-desc-block">
+            <div class="detail-desc-block detail-section">
               <div class="detail-label">📋 Description</div>
               <div class="detail-description-text">${formatText(f.description || "")}</div>
             </div>
+            ${suggBlock}
+            ${buildIssueFlow(f)}
             <div class="ide-stack">
               <div>
                 <div class="detail-label">📍 Current Code</div>
@@ -2008,7 +2225,7 @@
               </div>
               <div class="ide-stack-arrow">↓ Replace with</div>
               <div>
-                <div class="detail-label">✨ Suggested Fix</div>
+                <div class="detail-label">✨ Suggested Code</div>
                 <div class="ide-box ide-box-suggested">
                   <div class="ide-box-header">
                     <span class="ide-box-label-suggested">Suggested</span>
@@ -2023,27 +2240,18 @@
       } else {
         detailContent = `
           <div class="finding-detail-inner single">
-            <div>
+            <div class="detail-section">
               <div class="detail-label">📋 Description</div>
               <div class="detail-description-text">${formatText(f.description || "")}</div>
             </div>
-            <div>
-              <div class="detail-label">💡 Suggested Fix</div>
-              <div class="ide-box">
-                <div class="ide-box-header">
-                  <span>🔧</span>
-                  <span class="ide-box-file">${locFull}</span>
-                  <button class="ide-copy-btn" data-copy="${escAttr(f.suggestion || "")}">Copy</button>
-                </div>
-                <div class="ide-box-body">${ideLines}</div>
-              </div>
-            </div>
+            ${suggBlock}
+            ${buildIssueFlow(f)}
           </div>`;
       }
 
       const detailRow = `
         <tr class="finding-detail-row" id="finding-detail-${i}">
-          <td colspan="5" class="finding-detail-cell">
+          <td colspan="5" class="finding-detail-cell" data-level="${esc(f.level || '')}" data-parity="${i % 2 === 0 ? "even" : "odd"}">
             ${detailContent}
           </td>
         </tr>`;
@@ -2120,6 +2328,21 @@
     if (copyBtn) {
       copyBtn.addEventListener("click", () => copyFindingsAsMarkdown(findings));
     }
+
+    // Wire up ide-copy-btn (data-copy attribute, delegated from document)
+    document.addEventListener("click", e => {
+      const btn = e.target.closest(".ide-copy-btn");
+      if (!btn) return;
+      const raw = btn.getAttribute("data-copy") || "";
+      const text = raw.replace(/\\n/g, "\n");
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = "✓ Copied";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove("copied"); }, 1600);
+      }).catch(() => {});
+    });
   }
 
   function copyFindingsAsMarkdown(findings) {

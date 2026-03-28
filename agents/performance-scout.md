@@ -302,3 +302,54 @@ When your finding points to a specific line or block of code that should change,
 - `suggested_code.highlight_start` marks the fixed lines in the suggested version
 - If the finding is conceptual (missing abstraction, pattern mismatch, architectural concern) with no specific fixable line — **omit both fields entirely**
 - Never fabricate code — only include lines you actually read from the file with the `Read` tool
+
+---
+
+### Reproduction Flow Field (optional but strongly preferred for CRITICAL/HIGH/MED)
+
+When your finding has a clear trigger scenario, include an `issue_flow` object that lets the developer reproduce and measure the performance issue in their specific codebase. This is especially valuable in large repos where the issue might be mitigated elsewhere.
+
+```json
+{
+  "level": "HIGH",
+  "found_by": "performance-scout",
+  "location": "src/controllers/dashboard.js",
+  "line": 88,
+  "description": "...",
+  "suggestion": "...",
+  "issue_flow": {
+    "summary": "N+1 query pattern fires 101 DB hits for a 100-user dashboard load",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Load the user dashboard with a moderately sized dataset",
+        "input": "GET /api/dashboard?limit=100",
+        "critical": "Each user in the list triggers a separate DB call for metadata inside a forEach loop at line 88"
+      },
+      {
+        "step": 2,
+        "action": "Monitor database query count in server logs or a DB profiler",
+        "input": null,
+        "critical": "Expect 101 queries — 1 for the user list + 1 per user — instead of 1 batched JOIN query"
+      },
+      {
+        "step": 3,
+        "action": "Scale the dataset to see linear degradation",
+        "input": "GET /api/dashboard?limit=1000",
+        "critical": "Response time grows linearly — 1001 queries at 1000 users, 10001 at 10000 users"
+      }
+    ],
+    "critical_point": "dashboard.js:88 — metadata.findById(user.id) called inside forEach, no eager loading or batching"
+  }
+}
+```
+
+**Rules:**
+- Include `issue_flow` only when the finding level is CRITICAL, HIGH, or MED **and** you can describe a concrete trigger scenario
+- **Never fabricate steps** — only describe scenarios you can verify from the code you read
+- Omit `issue_flow` entirely for DISCUSS and UNCLEAR findings (by definition the impact is unconfirmed)
+- `input` is nullable — set to `null` for observation steps (e.g., "check the logs")
+- `critical` per step is optional but strongly preferred — it explains the performance mechanism at that step
+- Max 6 steps
+- `critical_point` is required when `issue_flow` is present — one sentence identifying the exact code location and pattern causing the issue
+- For performance, steps should describe: the trigger request/operation, how to observe the degradation, and optionally how to scale-test it

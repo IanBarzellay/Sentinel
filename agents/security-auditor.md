@@ -232,3 +232,48 @@ When your finding points to a specific line or block of code that should change,
 - `suggested_code.highlight_start` marks the fixed lines in the suggested version
 - If the finding is conceptual (missing abstraction, pattern mismatch, architectural concern) with no specific fixable line — **omit both fields entirely**
 - Never fabricate code — only include lines you actually read from the file with the `Read` tool
+
+---
+
+### Reproduction Flow Field (optional but strongly preferred for CRITICAL/HIGH/MED)
+
+When your finding has a clear, traceable attack path, include an `issue_flow` object that lets the developer verify the vulnerability is real and exploitable in their specific codebase.
+
+```json
+{
+  "level": "HIGH",
+  "found_by": "security-auditor",
+  "location": "src/routes/api.js",
+  "line": 34,
+  "description": "...",
+  "suggestion": "...",
+  "issue_flow": {
+    "summary": "NoSQL injection bypasses authentication — no valid password required",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Send POST /api/auth/login with a MongoDB operator as the password value",
+        "input": "{ \"username\": \"admin\", \"password\": { \"$ne\": null } }",
+        "critical": "MongoDB $ne operator matches any non-null value — the query returns the admin user without a real password"
+      },
+      {
+        "step": 2,
+        "action": "Observe the server response",
+        "input": null,
+        "critical": "Server returns HTTP 200 with a valid admin JWT — full authentication bypass achieved"
+      }
+    ],
+    "critical_point": "UserController.js:42 — req.body.password passed directly to User.findOne() with no type or value sanitization"
+  }
+}
+```
+
+**Rules:**
+- Include `issue_flow` only when the finding level is CRITICAL, HIGH, or MED **and** you have traced the complete attack path
+- **Never fabricate steps** — only describe actions you can verify from the code you read
+- Omit `issue_flow` entirely for DISCUSS and UNCLEAR findings (by definition the path is unconfirmed)
+- `input` is nullable — set to `null` for observation steps that have no payload
+- `critical` per step is optional but strongly preferred — it explains *why* that step matters in the chain
+- Max 6 steps — if the attack chain is longer, summarize compound steps
+- `critical_point` is required when `issue_flow` is present — one sentence pinpointing the exact vulnerable code location and mechanism
+- The goal is actionable verification, not a tutorial. Steps should be concise and precise.

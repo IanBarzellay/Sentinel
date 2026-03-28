@@ -132,6 +132,50 @@ def validate(filepath):
                             f"{label}: 'current_code.{key}' should be an integer or null"
                         )
 
+        # Validate issue_flow if present (warnings only — never triggers retry)
+        iflow = finding.get("issue_flow")
+        if iflow is not None:
+            if not isinstance(iflow, dict):
+                fi["warnings"].append(
+                    f"{label}: 'issue_flow' must be a JSON object (non-critical)"
+                )
+            else:
+                if not str(iflow.get("summary") or "").strip():
+                    fi["warnings"].append(
+                        f"{label}: 'issue_flow.summary' is missing or empty (non-critical)"
+                    )
+                if not str(iflow.get("critical_point") or "").strip():
+                    fi["warnings"].append(
+                        f"{label}: 'issue_flow.critical_point' is missing or empty (non-critical)"
+                    )
+                steps = iflow.get("steps")
+                if steps is None:
+                    fi["warnings"].append(
+                        f"{label}: 'issue_flow.steps' array is missing (non-critical)"
+                    )
+                elif not isinstance(steps, list):
+                    fi["warnings"].append(
+                        f"{label}: 'issue_flow.steps' must be an array (non-critical)"
+                    )
+                elif len(steps) > 6:
+                    fi["warnings"].append(
+                        f"{label}: 'issue_flow.steps' has {len(steps)} steps — maximum is 6 (non-critical)"
+                    )
+                else:
+                    for si, step in enumerate(steps):
+                        slabel = f"{label} flow step #{si + 1}"
+                        if not isinstance(step, dict):
+                            fi["warnings"].append(
+                                f"{slabel}: must be a JSON object (non-critical)"
+                            )
+                            continue
+                        if not str(step.get("action") or "").strip():
+                            fi["warnings"].append(
+                                f"{slabel}: 'action' is missing or empty (non-critical)"
+                            )
+                        # 'input' may be null — that is valid
+                        # 'critical' is optional — no warning if absent
+
         # --- Non-critical warnings ---
 
         if not str(finding.get("suggestion") or "").strip():
